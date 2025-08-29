@@ -1,6 +1,6 @@
 project:
   type: website
-  output-dir: docs
+
 
 website:
   title: "🐢ISSS626-Geospatial Analytics and Applications"
