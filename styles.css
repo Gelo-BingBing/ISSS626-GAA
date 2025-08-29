@@ -1,1 +1,226 @@
 /* css styles */
+/* ===========================
+   Summer Splash – Quarto CSS
+   Palette based on: 
+   Baby Blue  #D4F1F4
+   Blue Green #75E6DA
+   Blue Grotto#189AB4
+   Navy Blue  #05445E
+   =========================== */
+
+/* ---- Color tokens ---- */
+:root{
+  --ss-baby:   #D4F1F4;
+  --ss-green:  #75E6DA;
+  --ss-grotto: #189AB4;
+  --ss-navy:   #05445E;
+  --ss-ink:    #2f2f2f;
+  --ss-bg:     #ffffff;
+  --ss-soft:   #f2fbff; /* very light blue for panels */
+  --ss-border: #e6eef3;
+  --ss-warning:#ffb703;
+  --ss-warning-d:#fb8500;
+  --focus:     rgba(24,154,180,.35);
+}
+
+/* ---- Base ---- */
+html, body{
+  background: var(--ss-bg);
+  color: var(--ss-ink);
+  font-family: "Helvetica Neue", Arial, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  line-height: 1.6;
+}
+
+/* Headings */
+h1, h2, h3, h4{
+  color: var(--ss-navy);
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+h1{ font-size: 2.2rem; }
+h2{ font-size: 1.7rem; margin-top: 2rem; }
+h3{ font-size: 1.3rem; }
+
+/* Paragraph rhythm */
+p{ margin: .6rem 0 1rem; }
+
+/* Links */
+a{
+  color: var(--ss-grotto);
+  text-decoration: none;
+  transition: color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+a:hover, a:focus{
+  color: var(--ss-green);
+}
+a:focus{
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---- Navbar ---- */
+.navbar {
+  background: var(--ss-grotto) !important; /* Blue Grotto 背景 */
+  border-bottom: 1px solid rgba(0,0,0,.04);
+}
+
+.navbar-brand, .navbar-nav .nav-link {
+  color: #ffffff !important; /* 改成白色文字 */
+  font-weight: 600;
+}
+
+.navbar-brand:hover, .navbar-nav .nav-link:hover {
+  color: var(--ss-green) !important; /* hover 时亮蓝绿 */
+}
+
+/* ---- 去掉那个圆点小logo ---- */
+.navbar-brand::before {
+  content: none !important;
+}
+
+
+/* Optional minimal brand dot (works even没logo) */
+.navbar-brand::before{
+  content: "";
+  display: inline-block;
+  width: 14px; height: 14px;
+  margin-right: 8px; border-radius: 50%;
+  background: linear-gradient(135deg,var(--ss-green),var(--ss-grotto));
+  box-shadow: 0 0 0 2px rgba(255,255,255,.25);
+}
+
+/* ---- Hero/Page title area ---- */
+.quarto-title-block .title{
+  color: var(--ss-navy);
+}
+.quarto-title-block .subtitle{
+  color: #3c5f71;
+}
+
+/* ---- Code blocks ---- */
+pre, code, kbd, samp{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+pre{
+  background: var(--ss-soft);
+  border: 1px solid var(--ss-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+code{
+  background: #eef7fb;
+  border-radius: 4px;
+  padding: 0 .25rem;
+}
+
+/* ---- Callouts / Alerts ---- */
+.callout{
+  border-left-width: 6px !important;
+  border-radius: 10px;
+}
+.callout.note{    --bs-callout-border-color: var(--ss-grotto); background: #f3fbfd; }
+.callout.tip{     --bs-callout-border-color: var(--ss-green);  background: #effcfa; }
+.callout.warning{ --bs-callout-border-color: var(--ss-warning);background: #fff8e8; }
+
+/* ---- Tables ---- */
+table{
+  border-color: var(--ss-border) !important;
+}
+.table{
+  background: #fff;
+  border: 1px solid var(--ss-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.table thead th{
+  background: var(--ss-baby);
+  color: #0f2f3c;
+  border-color: var(--ss-border);
+}
+.table-striped tbody tr:nth-of-type(odd){
+  background: #fbfeff;
+}
+
+/* ---- Figures / Images ---- */
+img, figure img{
+  border-radius: 10px;
+  border: 1px solid var(--ss-border);
+}
+figcaption{
+  color: #5a6f7a;
+}
+
+/* ---- Buttons ---- */
+.btn-primary{
+  background: var(--ss-grotto);
+  border-color: var(--ss-grotto);
+}
+.btn-primary:hover{
+  background: var(--ss-navy);
+  border-color: var(--ss-navy);
+}
+.btn-outline-primary{
+  color: var(--ss-grotto);
+  border-color: var(--ss-grotto);
+}
+.btn-outline-primary:hover{
+  color: #fff; background: var(--ss-grotto);
+}
+
+/* ---- Badges / Pills ---- */
+.badge.bg-primary{ background: var(--ss-grotto) !important; }
+.badge.bg-info{    background: var(--ss-green)  !important; color:#0d3a45; }
+
+/* ---- Cards / Panels ---- */
+.card{
+  border: 1px solid var(--ss-border);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(5,68,94,.04);
+}
+.card-header{
+  background: var(--ss-baby);
+  color: #0f2f3c;
+  font-weight: 600;
+}
+
+/* ---- Blockquote ---- */
+blockquote{
+  background: #f4fbfd;
+  border-left: 6px solid var(--ss-grotto);
+  padding: .9rem 1rem;
+  color: #335b68;
+  border-radius: 8px;
+}
+
+/* ---- Footer (if present) ---- */
+.footer, .footer p{
+  background: #f6fcff !important;
+  color: #466a78;
+}
+
+/* ---- Forms / Inputs ---- */
+.form-control:focus{
+  border-color: var(--ss-grotto);
+  box-shadow: 0 0 0 .2rem var(--focus);
+}
+
+/* ---- TOC ---- */
+#TOC, .toc-active .nav-link.active{
+  border-color: var(--ss-border);
+}
+.sidebar .nav-link, .toc .nav-link{
+  color: #2f4858;
+}
+.sidebar .nav-link.active, .toc .nav-link.active{
+  color: var(--ss-grotto);
+  font-weight: 700;
+}
+
+/* ---- Small utilities ---- */
+hr{ border-top: 1px solid var(--ss-border); }
+kbd{ background:#dff6fb; border:1px solid #bfe9f3; }
+
+/* High-contrast focus for accessibility */
+*:focus-visible{ outline: 3px solid var(--focus); outline-offset: 2px; }
