@@ -2,6 +2,10 @@
 title: "ISSS626-GAA"
 ---
 
-This is a Quarto website.
+![](images/clipboard-1791076201.png){width="766"}
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+**Hi there! 👋**
+
+Welcome to my learning journal for **ISSS626-G1 – Geospatial Analytics and Applications**.
+
+**This site is my little corner — think of it as a travel diary of my journey through geospatial analytics, with maps, code, and stories along the way.**
