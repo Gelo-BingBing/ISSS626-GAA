@@ -352,6 +352,16 @@ buffer_cycling_selected <- st_intersection(
 
 3.   `plot()` of R Graphic will be used to create the plot as shown below.
 
+    ```{r}
+    plot(buffer_cycling_selected)
+
+    plot(mpsz_selected$geometry)
+    plot(buffer_cycling_selected$geometry, 
+         col = "lightblue", 
+         border = "black", 
+         add = TRUE)
+    ```
+
 ### **1.9.2 Use case 2: To determine the number of pre-schools by planning subzone**
 
 #### 1.9.2.1 The scenario
