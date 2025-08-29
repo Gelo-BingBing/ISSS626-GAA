@@ -1,0 +1,9 @@
+.Rhistory
+.Rproj.user/
+.RData
+_site/
+docs/
+.vscode/
+.venv/
+.virtual_documents/
+.DS_Store
