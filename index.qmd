@@ -1,6 +1,6 @@
 ## ISSS626-Geospatial Analytics and Applications
 
-![](images/clipboard-1791076201.png){width="766"}
+![](images/clipboard-1791076201.png){fig-align="center" width="534"}
 
 **Hi there! 👋**
 
