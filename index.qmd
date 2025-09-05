@@ -2,8 +2,6 @@
 title: "ISSS626-Geospatial Analytics and Applications"
 ---
 
-# **ISSS626-Geospatial Analytics and Applications**
-
 ![](images/clipboard-1791076201.png){width="766"}
 
 **Hi there! 👋**

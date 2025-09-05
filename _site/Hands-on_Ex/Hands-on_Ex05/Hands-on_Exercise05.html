@@ -136,19 +136,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     </a>
     <ul class="dropdown-menu" aria-labelledby="nav-menu-hands-on-exercise">    
         <li>
-    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex01/Hands-on Exercise01.html">
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex01/Hands-on_Exercise01.html">
  <span class="dropdown-text">Hands-on Exercise 1</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex02/Hands-on Exercise02.html">
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex02/Hands-on_Exercise02.html">
  <span class="dropdown-text">Hands-on Exercise 2</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex04/Hands-on Exercise04.html">
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex04/Hands-on_Exercise04.html">
  <span class="dropdown-text">Hands-on Exercise 4</span></a>
   </li>  
         <li>
-    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex05/Hands-on Exercise05.html">
+    <a class="dropdown-item" href="../../Hands-on_Ex/Hands-on_Ex05/Hands-on_Exercise05.html">
  <span class="dropdown-text">Hands-on Exercise 5</span></a>
   </li>  
     </ul>
@@ -272,8 +272,7 @@ Unlike first-order analysis, which only looks at point density, second-order met
 <h3 class="anchored" data-anchor-id="data-import"><strong>5.4.1 Data Import</strong></h3>
 <p>The processes of importing and preparing the geospatial data to meet the analysis are similar to Chapter 4. Please refer to the following sub-sections, if necessary:</p>
 <ul>
-<li><p><a href="file:///C:/tskam/r4gdsa/_book/chap04.html#importing-and-wrangling-geospatial-data-sets">Importing and Wrangling Geospatial Data Sets</a></p></li>
-<li><p><a href="file:///C:/tskam/r4gdsa/_book/chap04.html#geospatial-data-wrangling">Geospatial Data wrangling</a>&nbsp;for preparing geospatial data in ppp object class required by spatstat package.</p></li>
+<li><a href="file:///C:/tskam/r4gdsa/_book/chap04.html#importing-and-wrangling-geospatial-data-sets">Importing and Wrangling Geospatial Data Sets</a></li>
 </ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>mpsz_sf <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="st">"data/MasterPlan2019SubzoneBoundaryNoSeaKML.kml"</span>) <span class="sc">%&gt;%</span> </span>
@@ -309,6 +308,10 @@ Geodetic CRS:  WGS 84</code></pre>
 </section>
 <section id="data-preparation" class="level3">
 <h3 class="anchored" data-anchor-id="data-preparation"><strong>5.4.2 Data Preparation</strong></h3>
+<p>Please refer to the following sub-sections, if necessary:</p>
+<ul>
+<li><a href="file:///C:/tskam/r4gdsa/_book/chap04.html#geospatial-data-wrangling">Geospatial Data wrangling</a>&nbsp;for preparing geospatial data in ppp object class required by spatstat package.</li>
+</ul>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>extract_kml_field <span class="ot">&lt;-</span> <span class="cf">function</span>(html_text, field_name) {</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.na</span>(html_text) <span class="sc">||</span> html_text <span class="sc">==</span> <span class="st">""</span>) <span class="fu">return</span>(<span class="cn">NA_character_</span>)</span>
@@ -445,7 +448,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -473,7 +476,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -490,7 +493,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -518,7 +521,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -540,7 +543,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -568,7 +571,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -585,7 +588,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -612,7 +615,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-29-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -633,7 +636,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-30-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-30-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -660,7 +663,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-32-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-32-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -679,7 +682,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-33-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -707,7 +710,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-35-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-35-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -729,7 +732,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-36-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-36-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -756,7 +759,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-38-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-38-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -775,7 +778,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-39-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-39-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -803,7 +806,7 @@ enclosing rectangle: [2667.54, 55941.94] x [21448.47, 50256.33] units</code></pr
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Hands-on-Exercise05_files/figure-html/unnamed-chunk-41-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="Hands-on_Exercise05_files/figure-html/unnamed-chunk-41-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
