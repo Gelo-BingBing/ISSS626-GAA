@@ -2,7 +2,7 @@
 title: "Hands-on Exercise 02"
 ---
 
-# **2  Thematic Mapping and GeoVisualisation with R**
+## **2  Thematic Mapping and GeoVisualisation with R**
 
 ## 2.1 Overview
 
