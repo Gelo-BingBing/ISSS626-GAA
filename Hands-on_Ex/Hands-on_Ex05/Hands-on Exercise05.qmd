@@ -41,11 +41,11 @@ pacman::p_load(sf, spatstat, tmap, tidyverse,rvest)
 
 ## **5.4 Data Import and Preparation**
 
+### **5.4.1 Data Import**
+
 The processes of importing and preparing the geospatial data to meet the analysis are similar to Chapter 4. Please refer to the following sub-sections, if necessary:
 
 -   [Importing and Wrangling Geospatial Data Sets](file:///C:/tskam/r4gdsa/_book/chap04.html#importing-and-wrangling-geospatial-data-sets)
-
--   [Geospatial Data wrangling](file:///C:/tskam/r4gdsa/_book/chap04.html#geospatial-data-wrangling) for preparing geospatial data in ppp object class required by spatstat package.
 
 ```{r}
 mpsz_sf <- st_read("data/MasterPlan2019SubzoneBoundaryNoSeaKML.kml") %>% 
@@ -58,52 +58,102 @@ childcare_sf <- st_read("data/ChildCareServices.kml") %>%
   st_transform(crs = 3414)
 ```
 
+### **5.4.2 Data Preparation**
+
+Please refer to the following sub-sections, if necessary:
+
+-   [Geospatial Data wrangling](file:///C:/tskam/r4gdsa/_book/chap04.html#geospatial-data-wrangling) for preparing geospatial data in ppp object class required by spatstat package.
+
 ```{r}
 extract_kml_field <- function(html_text, field_name) {
-  if (is.na(html_text) || identical(html_text, "")) return(NA_character_)
+  if (is.na(html_text) || html_text == "") return(NA_character_)
+  
   page <- read_html(html_text)
-  rows <- html_elements(page, "tr")
-  vals <- rows %>%
+  rows <- page %>% html_elements("tr")
+  
+  value <- rows %>%
     keep(~ html_text2(html_element(.x, "th")) == field_name) %>%
     html_element("td") %>%
     html_text2()
-  if (length(vals) == 0) NA_character_ else vals
+  
+  if (length(value) == 0) NA_character_ else value
 }
+```
 
-
-if (!all(c("REGION_N","PLN_AREA_N","SUBZONE_N","SUBZONE_C") %in% names(mpsz_sf))) {
-  src <- if ("Description" %in% names(mpsz_sf)) "Description" else
-         if ("Name"        %in% names(mpsz_sf)) "Name"        else
-         stop("Neither 'Description' nor 'Name' exists in mpsz_sf; re-read the KML.")
-
-  mpsz_sf <- mpsz_sf %>%
-    mutate(
-      REGION_N   = map_chr(.data[[src]], extract_kml_field, "REGION_N"),
-      PLN_AREA_N = map_chr(.data[[src]], extract_kml_field, "PLN_AREA_N"),
-      SUBZONE_N  = map_chr(.data[[src]], extract_kml_field, "SUBZONE_N"),
-      SUBZONE_C  = map_chr(.data[[src]], extract_kml_field, "SUBZONE_C")
-    )
-}
-
+```{r}
 mpsz_sf <- mpsz_sf %>%
-  select(-any_of(c("Name","Description"))) %>%
+  mutate(
+    REGION_N = map_chr(Description, extract_kml_field, "REGION_N"),
+    PLN_AREA_N = map_chr(Description, extract_kml_field, "PLN_AREA_N"),
+    SUBZONE_N = map_chr(Description, extract_kml_field, "SUBZONE_N"),
+    SUBZONE_C = map_chr(Description, extract_kml_field, "SUBZONE_C")
+  ) %>%
+  select(-Name, -Description) %>%
   relocate(geometry, .after = last_col())
 ```
 
 ```{r}
+mpsz_cl <- mpsz_sf %>%
+  filter(SUBZONE_N != "SOUTHERN GROUP",
+         PLN_AREA_N != "WESTERN ISLANDS",
+         PLN_AREA_N != "NORTH-EASTERN ISLANDS")
+```
+
+```{r}
+write_rds(mpsz_cl, 
+          "data/mpsz_cl.rds")
+```
+
+#### **5.4.2.1Data wrangling**
+
+-   **Converting sf data frames to ppp class**
+
+```{r}
 childcare_ppp <- as.ppp(childcare_sf)
+```
+
+```{r}
 class(childcare_ppp)
+```
+
+```{r}
 summary(childcare_ppp)
 ```
 
+-   **Creating *owin* object**
+
 ```{r}
 sg_owin <- as.owin(mpsz_cl)
-class(sg_owin)
 ```
 
 ```{r}
+class(sg_owin)
+```
+
+-   **Combining point events object and owin object**
+
+```{r}
 childcareSG_ppp = childcare_ppp[sg_owin]
+```
+
+```{r}
 childcareSG_ppp
+```
+
+-   **Choa Chu Kang（**childcare_ck_ppp）
+
+```{r}
+ck_sf <- mpsz_cl %>% filter(PLN_AREA_N == "CHOA CHU KANG")
+ck_owin <- as.owin(ck_sf)
+childcare_ck_ppp <- childcareSG_ppp[ck_owin]
+```
+
+-   **Tampines**（childcare_tm_ppp）
+
+```{r}
+tm_sf <- mpsz_cl %>% filter(PLN_AREA_N == "TAMPINES")
+tm_owin <- as.owin(tm_sf)
+childcare_tm_ppp <- childcareSG_ppp[tm_owin]
 ```
 
 ## **5.5 Second-order Spatial Point Patterns Analysis**
