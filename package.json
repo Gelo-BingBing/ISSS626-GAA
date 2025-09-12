@@ -1,7 +1,0 @@
-{
-  "name": "isss626-gaa",
-  "private": true,
-  "devDependencies": {
-    "@netlify/plugin-quarto": "^5.0.0"
-  }
-}
