@@ -1,5 +1,11 @@
 ---
 title: "Spatio-Temporal Point Patterns Analysis"
+format:
+  html:
+    fig-width: 6
+    fig-height: 4
+    fig-dpi: 120
+    code-fold: true
 ---
 
 ## **6.1 Overview**
