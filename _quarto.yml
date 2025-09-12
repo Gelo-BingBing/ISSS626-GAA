@@ -20,6 +20,8 @@ website:
             href: "Hands-on_Ex/Hands-on_Ex04/Hands-on_Exercise04.html"
           - text: "Hands-on Exercise 5"
             href: "Hands-on_Ex/Hands-on_Ex05/Hands-on_Exercise05.html"
+          - text: "Hands-on Exercise 6"
+            href: "Hands-on_Ex/Hands-on_Ex06/Hands-on_Exercise06.html"
 
 format:
   html:
