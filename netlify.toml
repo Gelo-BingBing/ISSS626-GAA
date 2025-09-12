@@ -1,10 +1,12 @@
-
 [build]
-  command = """
-  curl -L -o quarto.tgz https://github.com/quarto-dev/quarto-cli/releases/download/v1.5.57/quarto-1.5.57-linux-amd64.tar.gz &&
-  tar -xzf quarto.tgz &&
-  export PATH="$PWD/quarto-1.5.57/bin:$PATH" &&
+command = """
+  QV=1.5.57
+  mkdir -p /opt/buildhome/.qbin &&
+  curl -L -o /opt/buildhome/.qbin/quarto.tgz \
+    https://github.com/quarto-dev/quarto-cli/releases/download/v${QV}/quarto-${QV}-linux-amd64.tar.gz &&
+  tar -xzf /opt/buildhome/.qbin/quarto.tgz -C /opt/buildhome/.qbin &&
+  export PATH="/opt/buildhome/.qbin/quarto-${QV}/bin:$PATH" &&
   quarto --version &&
   quarto render
-  """
-  publish = "_site"
+"""
+publish = "_site"
