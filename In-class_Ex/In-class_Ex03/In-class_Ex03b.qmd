@@ -10,9 +10,13 @@ execute:
   freeze: true
 ---
 
+## Loading the R package
+
 ```{r}
-pacman::p_load(tidyverse,sf,tmap,httr)
+pacman::p_load(tidyverse,sf,tmap,httr,lubridate)
 ```
+
+## Importing ACRA data
 
 ```{r}
 folder_path <- "data/aspatial/ACRA"
@@ -23,15 +27,14 @@ acra_data <- file_list %>%
   map_dfr(read_csv)
 ```
 
-```{r}
-write_rds(acra_data,
-          "data/rds/acra_data.rds")
-```
+## Tidying ACRA data
 
 ```{r}
+#| eval: false
+
 biz_56111 <- acra_data %>%
   select(1:24) %>%
-  filter(primary_ssic_code == 56111) %>% # Restaurants
+  filter(primary_ssic_code == 56111) %>% 
   rename(date = registration_incorporation_date) %>%
   mutate(date = as.Date(date),
          Year = year(date),
@@ -43,11 +46,29 @@ biz_56111 <- acra_data %>%
                                width =6,
                                side = "left",pad ="0"))  %>% 
   filter(Year == 2025)
+
 ```
 
 ```{r}
 length(file_list); ncol(acra_data); names(acra_data)[1:10]
 ```
+
+## Saving ACRA data
+
+```{r}
+#| eval: false
+
+write_rds(acra_data,
+          "data/rds/acra_data.rds")
+```
+
+```{r}
+if (file.exists("data/rds/biz_56111.rds")) {
+  biz_56111 <- read_rds("data/rds/biz_56111.rds")
+}
+```
+
+## Geocoding
 
 ```{r}
 postcodes <- unique(biz_56111$postal_code)
@@ -57,35 +78,72 @@ url <- "https://onemap.gov.sg/api/common/elastic/search"
 found <- data.frame()
 not_found <- data.frame(postcode = character())
 
-for(pc in postcodes){
+for (pc in postcodes) {
   query <- list(
     searchVal = pc,
-    returnGeom = "y",
-    getAddrDetails = "y",
+    returnGeom = "Y",
+    getAddrDetails = "Y",
     pageNum = "1"
   )
   
-  res <- GET(url,query = query)
+  res <- GET(url, query = query)
   json <- content(res)
   
-  if(json$found !=0) {
-    df <- as.data.frame(json$results,stringAsFactors = FALSE)
+  if (json$found != 0) {
+    df <- as.data.frame(json$results, stringsAsFactors = FALSE)
     df$input_postcode <- pc
-    found <- bind_rows(found,df)
-  } else{
-    not_found <- bind_rows(nit_found,data.frame(postcode = pc))
+    found <- bind_rows(found, df)
+  } else {
+    not_found <- bind_rows(not_found, data.frame(postcode = pc))
   }
 }
 ```
 
+## Tidying the geocoded data
+
+```{r}
+found <- found %>%
+  select(1:10)
+```
+
+## Appending the location information
+
 ```{r}
 biz_56111 = biz_56111 %>%
-  left_join(found,
+  left_join(found, 
             by = c('postal_code' = 'POSTAL'))
 ```
 
+## Saving the data
+
+```{r}
+#| eval: false
+write_rds(biz_56111, "data/rds/biz_56111.rds")
+```
+
+## Converting into SF data frame
+
 ```{r}
 biz_56111_sf <- st_as_sf(biz_56111,
-                         coords = c("X","Y"),
+                         coords = c("X.x","Y.y"),
                          crs = 3414)
+```
+
+```{r}
+plot(biz_56111_sf)
+```
+
+## Visualising the distribution
+
+```{r}
+ggplot(biz_56111, aes(x = Month_num)) +
+  geom_bar()
+```
+
+## Visualising the business
+
+```{r}
+tmap_mode('view')
+tm_shape(biz_56111_sf)+
+  tm_dots()
 ```
