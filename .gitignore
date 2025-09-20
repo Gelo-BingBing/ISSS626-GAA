@@ -9,6 +9,4 @@ site_libs/
 .httr-oauth
 .quarto
 /.quarto/
-
 data/
-
