@@ -61,3 +61,62 @@ gwstat_df <- as.data.frame(gwstat$SDF)
 ```{r}
 hunan_gstat <- cbind(hunan_sf,gwstat_df)
 ```
+
+```{r}
+#| fig.width: 8
+#| fig.height: 8
+tmap_mode("plot")
+
+tm_shape(hunan_sf) +
+  tm_polygons(
+    fill = "GDPPC",
+    fill.scale = tm_scale_intervals(      
+      style  = "quantile",
+      n      = 5,
+      values = "brewer.blues"
+    ),
+    fill.legend = tm_legend(              
+      title    = "GDPPC",
+      position = tm_pos_in("left","bottom")
+    )
+  ) +
+  tm_borders(col = "white", lwd = 0.5) +
+  tm_layout(frame = TRUE)
+```
+
+```{r}
+#| fig.width: 20
+#| fig.height: 25
+
+vars <- c("GDPPC_LM", "GDPPC_LSD", "GDPPC_LVar", "GDPPC_LSKe")
+
+tm_shape(hunan_gstat) +
+  tm_polygons(
+    fill = vars,
+    fill.scale = tm_scale_intervals(
+      style  = "quantile",
+      n      = 5,
+      values = "brewer.blues",
+      midpoint = NA                 
+    ),
+    fill.legend = tm_legend(
+      title    = "Value",
+      position = tm_pos_in("left","bottom")
+    )
+  ) +
+  tm_borders(col = "white", lwd = 0.5) +
+  tm_facets(
+    ncol = 2,
+    panel.label.size   = 1.8,       
+    panel.label.height = 1.4         
+  ) +
+  tm_layout(
+    frame = TRUE,
+    legend.outside = TRUE,          
+    legend.outside.position = "right",
+    legend.text.size  = 1.5,
+    legend.title.size = 1.8,
+    inner.margins = c(0.02, 0.02, 0.02, 0.02)
+  )
+
+```
