@@ -5,7 +5,7 @@ date: "2025-09-20"
 format: html
 execute: 
   eval: true
-  echo: true
+  echo: false
   warning: false
   freeze: true
 ---
@@ -16,19 +16,9 @@ This exercise applies spatial point pattern analysis methods to study the distri
 
 # 2. **Installing and Launching the R Packages**
 
-The following R packages will be used in this exercise:
-
-| **Package** | **Purpose** | **Use Case in Exercise** |
-|-------------|-------------|--------------------------|
-
-\
-\
-\
-\
-\
-
 ```{r}
-pacman::p_load(tidyverse, readr, lubridate,sf,tmap, rvest,httr, jsonlite, dplyr, purrr,spatstat)
+pacman::p_load(tidyverse, readr, lubridate,sf,tmap, rvest,httr, jsonlite, dplyr, purrr,spatstat,terra,spatstat.explore,stars,spatstat.geom,rlang)
+
 ```
 
 ## 2.1 **Reproducibilty**
@@ -41,14 +31,11 @@ set.seed(1234)
 
 # 3. Data Import & Preparation
 
-The following 2 datasets will be used in this exercise.
-
-| **Dataset Name** | **Description** | **Format** | **Source** |
-|------------------|-----------------|------------|------------|
+The following 3 datasets will be used in this exercise.
 
 -   ACRA (Accounting and Corporate Regulatory Authority) Information on Corporate Entities datasets from data.gov.sg
 
--   postal code
+-   postal code download by onemap
 
 -   Master Plan 2019 Subzone Boundary (No Sea), a polygon feature data providing information of URA 2019 Master Plan Planning Subzone boundary data.
 
@@ -61,6 +48,7 @@ acra_files <- list.files("data/aspatial/ACRA",
 ```
 
 ```{r}
+
 acra_raw <- map_dfr(acra_files, read_csv)
 ```
 
@@ -109,7 +97,6 @@ acra_selected %>%
 
 ```
 
-
 Load **Master Plan 2019 Subzone Boundary (No Sea)** for spatial reference.
 
 ```{r}
@@ -151,49 +138,1026 @@ acra_sf_proj <- st_transform(acra_sf, 3414)
 mp19_subzone_proj <- st_transform(mp19_subzone, 3414)
 ```
 
- 
-4. Geospatial Data wrangling
+# 4.Geospatial Data wrangling
 
 spatstat relies on its own specific data structures like ppp (planar point pattern) for point data and owin for observation windows
 
+## 4.1 Converting sf data frames to ppp class
 
-4.1 Converting sf data frames to ppp class
-spatstat requires the point event data in ppp object form. The code chunk below uses [as.ppp()] of spatstat package to convert childcare_sf to ppp format.
+spatstat requires the point event data in ppp object form. The code chunk below uses \[as.ppp()\] of spatstat package to convert childcare_sf to ppp format.
+
 ```{r}
 acra_ppp <- as.ppp(acra_sf_proj)
 class(acra_ppp)
 ```
 
-
-
 ```{r}
 summary(acra_ppp)
 ```
 
+## 4.2 Creating owin object
 
-4.2 Creating owin object
 When analysing spatial point patterns, it is a good practice to confine the analysis with a geographical area like Singapore boundary. In spatstat, an object called owin is specially designed to represent this polygonal region.
-
-The code chunk below, as.owin() of spatstat is used to covert mpsz_sf into owin object of spatstat.
 
 ```{r}
 sg_owin <- as.owin(mp19_subzone_proj)
 class(sg_owin)
 plot(sg_owin)
 ```
-4.2.1 Combining point events object and owin object
-```{r}
-sg_owin <- as.owin(mpsz_cl)
-```
 
+### 4.2.1 Combining point events object and owin object
 
 ```{r}
-acra_ppp = childcare_ppp[sg_owin]
+sg_owin <- as.owin(mp19_subzone_proj)
 ```
 
+```{r}
+# Education
+acra_85 <- acra_sf_proj %>% filter(ssic_2d == "85")
+acra_85_ppp <- as.ppp(acra_85)
+acra_85SG_ppp <- acra_85_ppp[sg_owin]
+
+acra_85SG_ppp
+```
+
+```{r}
+# Food & Beverage
+acra_56 <- acra_sf_proj %>% filter(ssic_2d == "56")
+acra_56_ppp <- as.ppp(acra_56)
+acra_56SG_ppp <- acra_56_ppp[sg_owin]
+
+acra_56SG_ppp
+```
+
+```{r}
+# IT Services
+acra_62 <- acra_sf_proj %>% filter(ssic_2d == "62")
+acra_62_ppp <- as.ppp(acra_62)
+acra_62SG_ppp <- acra_62_ppp[sg_owin]
+
+acra_62SG_ppp
+```
+
+## 4.3 Clark-Evan Test for Nearest Neighbour Analysis
+
+The Clark-Evans test (Nearest Neighbour Analysis, NNA) is a spatial statistics method that calculates the average distance between each point and its closest neighbor to determine if a pattern of points is clustered, dispersed, or randomly distributed.\
+
+We will perform the Clark-Evans test of aggregation for each selected industry by using `clarkevans.test()` of **spatstat.explore** package.
+
+The general test hypotheses are:
+
+-   **H0**: The distribution of business entities is randomly distributed (CSR – Complete Spatial Randomness).
+
+-   **H1**: The distribution of business entities is not randomly distributed (i.e., significantly clustered or dispersed).
+
+The 95% confidence interval will be used.
+
+### **4.3.1 Perform the Clark-Evans test without CSR**
+
+#### 4.3.1.1 Food & Beverage (SSIC 56)
+
+For **Food & Beverage** industry, the hypotheses are:
+
+-   **H0**: The distribution of Food & Beverage businesses is randomly distributed.
+
+-   **H1**: The distribution of Food & Beverage businesses is not randomly distributed.
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| warning: false
+#| eval: false
+
+sub_fnb <- acra_sf_proj %>% filter(ssic_2d == "56")
+coords_fnb <- st_coordinates(sub_fnb)
+ppp_fnb <- spatstat.geom::ppp(x = coords_fnb[,1], y = coords_fnb[,2],window = sg_owin)
+
+clarkevans.test(ppp_fnb,
+                correction = "none",
+                clregion = "sg_owin",
+                alternative = c("clustered"))
+```
+
+**Insights:**
+
+-   Clark-Evans test gives **R = 0.36, p \< 0.001**, shows **significantly clustered**.
+
+-   This means F&B outlets are not randomly distributed but significantly concentrated in certain locations.
+
+#### 4.3.1.2 IT Services (SSIC 62)
+
+For **IT Services** industry, the hypotheses are:
+
+-   **H0**: The distribution of IT Services businesses is randomly distributed.
+
+-   **H1**: The distribution of IT Services businesses is not randomly distributed.
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| warning: false
+#| eval: false
+
+sub_it <- acra_sf_proj %>% filter(ssic_2d == "62")
+coords_it <- st_coordinates(sub_it)
+ppp_it <- spatstat.geom::ppp(x = coords_it[,1], y = coords_it[,2],window = sg_owin)
+
+clarkevans.test(ppp_it,
+                correction = "none",
+                clregion = "sg_owin",
+                alternative = c("clustered"))
+```
+
+**Insights:**
+
+-   Clark-Evans test gives **R = 0.25, p \< 0.001**, indicating **strong clustering**.
+
+-   The distribution is highly concentrated, suggesting strong spatial dependence.
+
+#### 4.3.1.3 Education (SSIC 85)
+
+For **Education** industry, the hypotheses are:
+
+H0: The distribution of Education businesses is randomly distributed.
+
+H1: The distribution of Education businesses is not randomly distributed.
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| warning: false
+#| eval: false
+
+sub_edu <- acra_sf_proj %>% filter(ssic_2d == "85")
+coords_edu <- st_coordinates(sub_edu)
+ppp_edu <- spatstat.geom::ppp(x = coords_edu[,1], y = coords_edu[,2],window = sg_owin)
+
+clarkevans.test(ppp_edu,
+                correction = "none",
+                clregion = "sg_owin",
+                alternative = c("clustered"))
+
+```
+
+**Insights:**
+
+-   Clark-Evans test gives **R = 0.37, p \< 0.001**, also **significantly clustered**.
+
+-   Education providers tend to be located in specific zones rather than evenly across Singapore.
+
+### **4.3.2 Perform the Clark-Evans test with CSR**
+
+In the code chunk below, the argument method = “MonteCarlo” is used. In this case, the p-value for the test is computed by comparing the observed value of R to the results obtained from nsim (i.e. 39, 99, 999) simulated realisations of Complete Spatial Randomness conditional on the observed number of points.
+
+```{r}
+#| warning: false
+#| eval: false
+
+# Food & Beverage
+ce_fnb <- clarkevans.test(ppp_fnb,
+                          correction = "none",
+                          clipregion = sg_owin,
+                          alternative = c("clustered"),
+                          method = "MonteCarlo",
+                          nsim = 99)
+saveRDS(ce_fnb, "data/aspatial/kde_rds/CE_FNB.rds")
+
+# IT Services
+ce_it <- clarkevans.test(ppp_it,
+                         correction = "none",
+                         clipregion = sg_owin,
+                         alternative = c("clustered"),
+                         method = "MonteCarlo",
+                         nsim = 99)
+saveRDS(ce_it, "data/aspatial/kde_rds/CE_IT.rds")
+
+# Education
+ce_edu <- clarkevans.test(ppp_edu,
+                          correction = "none",
+                          clipregion = sg_owin,
+                          alternative = c("clustered"),
+                          method = "MonteCarlo",
+                          nsim = 99)
+saveRDS(ce_edu, "data/aspatial/kde_rds/CE_EDU.rds")
+
+```
+
+```{r}
+ce_fnb <- readRDS("data/aspatial/kde_rds/CE_FNB.rds")
+ce_it  <- readRDS("data/aspatial/kde_rds/CE_IT.rds")
+ce_edu <- readRDS("data/aspatial/kde_rds/CE_EDU.rds")
+```
+
+```{r}
+ce_fnb
+```
+
+-   The significant R \< 1 indicates strong clustering. F&B businesses tend to group around popular dining districts and residential catchments, reflecting demand-driven location strategies.
+
+```{r}
+ce_it
+```
+
+-   The lowest R among the three industries, suggesting the strongest clustering. This likely reflects concentration in CBDs and business parks where digital and consultancy firms prefer proximity to clients and talent.
+
+```{r}
+ce_edu
+```
+
+-   Also shows clear clustering, though slightly weaker than IT. This may align with population density, as educational services are concentrated in residential towns and central areas.
+
+## **5. Kernel Density Estimation Method**
+
+**Kernel Density Estimation (KDE)** is a valuable tool for visualising and analyzing first-order spatial point patterns. It is widely considered a method within **Exploratory Spatial Data Analysis (ESDA).** We will use Kernel Density Estimation (KDE) is applied to visualize the spatial intensity of newly registered businesses. It helps us **identify hotspots, highlight areas with high clustering**, and provides a clearer picture of the spatial distribution pattern beyond point maps.
+
+**5.1 Working with automatic bandwidth selection method**
+
+Bandwidth selectors：
+
+-   bw.diggle(): conservative (controls false positives); good general default.
+
+-   bw.CvL(): Cressie–Read cross-validation; tends to optimize predictive fit.
+
+-   bw.scott(): rule-of-thumb; reasonable for near-uniform patterns.
+
+-   bw.ppl(): profile pseudo-likelihood; often a robust first choice.
+
+-   Kernel: use gaussian (default); alternatives: "epanechnikov", "quartic", "disc".
+
+-   Edge correction: set edge = TRUE (Jones, 1993; Diggle, 2010) to reduce boundary underestimation.
+
+-   Coordinate system: run KDE in a metric projection (e.g., EPSG:3414) because it depends on distances.
+
+-   Units: density.ppp() returns intensity per m²; multiply by 1e6 (10\^6) to report per km².
+
+```{r}
+# Food & Beverage
+kde_SG_fnb <- density(
+  acra_56SG_ppp,
+  sigma = bw.diggle(acra_56SG_ppp),
+  edge = TRUE,
+  kernel = "gaussian"
+)
+
+# IT Services
+kde_SG_it <- density(
+  acra_62SG_ppp,
+  sigma = bw.diggle(acra_62SG_ppp),
+  edge = TRUE,
+  kernel = "gaussian"
+)
+
+# Education
+kde_SG_edu <- density(
+  acra_85SG_ppp,
+  sigma = bw.diggle(acra_85SG_ppp),
+  edge = TRUE,
+  kernel = "gaussian"
+)
+
+```
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| eval: false
+kde_SG_fnb <- density(
+  acra_56SG_ppp,
+  sigma=bw.diggle,
+  edge=TRUE,
+  kernel="gaussian") 
+
+plot(kde_SG_fnb)
+```
+
+```{r}
+summary(kde_SG_fnb)
+```
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| eval: false
+
+kde_SG_it <- density(
+  acra_62SG_ppp,
+  sigma=bw.diggle,
+  edge=TRUE,
+  kernel="gaussian") 
+
+plot(kde_SG_it)
+
+```
+
+```{r}
+summary(kde_SG_it)
+```
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| eval: false
+kde_SG_edu <- density(
+  acra_85SG_ppp,
+  sigma=bw.diggle,
+  edge=TRUE,
+  kernel="gaussian") 
+
+plot(kde_SG_edu)
+```
+
+```{r}
+summary(kde_SG_edu)
+```
+
+**5.2 Rescalling KDE values**
+
+In the code chunk below, *rescale.ppp()* is used to covert the unit of measurement from meter to kilometer.
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| eval: false
+# Food & Beverage
+ppp_fnb <- acra_56SG_ppp
+ppp_fnb_km <- rescale.ppp(ppp_fnb, 1000, "km")
+kde_fnb <- density(
+  ppp_fnb_km,
+  sigma = bw.diggle(ppp_fnb_km),
+  edge = TRUE,
+  kernel = "gaussian"
+)
+plot(kde_fnb, main = "KDE - Food & Beverage (km)")
+plot(sg_owin, add = TRUE)
+
+```
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| eval: false
+# IT Services
+ppp_it <- acra_62SG_ppp
+ppp_it_km <- rescale.ppp(ppp_it, 1000, "km")
+kde_it <- density(
+  ppp_it_km,
+  sigma = bw.diggle(ppp_it_km),
+  edge = TRUE,
+  kernel = "gaussian"
+)
+plot(kde_it, main = "KDE - IT Services (km)")
+plot(sg_owin, add = TRUE)
+
+```
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| eval: false
+# Education
+ppp_edu <- acra_85SG_ppp
+ppp_edu_km <- rescale.ppp(ppp_edu, 1000, "km")
+kde_edu <- density(
+  ppp_edu_km,
+  sigma = bw.diggle(ppp_edu_km),
+  edge = TRUE,
+  kernel = "gaussian"
+)
+plot(kde_edu, main = "KDE - Education (km)")
+plot(sg_owin, add = TRUE)
+
+```
+
+Notice that output image looks identical to the earlier version, the only changes in the data values (refer to the legend).
+
+**5.3 Working with different automatic badwidth methods**
+
+Beside *bw.diggle()*, there are three other **spatstat** functions can be used to determine the bandwidth, they are: *bw.CvL()*, *bw.scott()*, and *bw.ppl()*.
+
+Let us take a look at the bandwidth return by these automatic bandwidth calculation methods by using the code chunk below.
+
+```{r}
+#| eval: false
+# Food & Beverage
+bw.CvL(ppp_fnb_km)
+bw.scott(ppp_fnb_km)
+bw.ppl(ppp_fnb_km)
+bw.diggle(ppp_fnb_km)
+
+```
+
+```{r}
+#| eval: false
+# IT Services
+bw.CvL(ppp_it_km)
+bw.scott(ppp_it_km)
+bw.ppl(ppp_it_km)
+bw.diggle(ppp_it_km)
+
+```
+
+```{r}
+#| eval: false
+# Education
+bw.CvL(ppp_edu_km)
+bw.scott(ppp_edu_km)
+bw.ppl(ppp_edu_km)
+bw.diggle(ppp_edu_km)
+
+```
+
+**Sample(fnb):**
+
+The code chunk beow will be used to compare the output of using *bw.diggle* and *bw.ppl*methods.
+
+```{r}
+#| eval: false
+# Food & Beverage KDE (Diggle vs PPL)
+kde_fnb_diggle <- density(ppp_fnb_km,
+                          sigma = bw.diggle(ppp_fnb_km),
+                          edge = TRUE,
+                          kernel = "gaussian")
+
+kde_fnb_ppl <- density(ppp_fnb_km,
+                       sigma = bw.ppl(ppp_fnb_km),
+                       edge = TRUE,
+                       kernel = "gaussian")
+
+par(mfrow = c(1, 2))
+plot(kde_fnb_diggle, main = "F&B - bw.diggle")
+plot(kde_fnb_ppl, main = "F&B - bw.ppl")
+
+```
+
+### **5.4 Working with different kernel methods**
+
+By default, the kernel method used in *density.ppp()* is *gaussian*. But there are three other options, namely: Epanechnikov, Quartic and Dics. The code chunk below will be used to compute three more kernel density estimations by using these three kernel function.
+
+-   **Food & Beverage KDE (different kernels)**
+
+```{r}
+#| eval: false
+par(mfrow=c(2,2))
+plot(density(ppp_fnb_km, sigma=0.4952614, edge=TRUE, kernel="gaussian"),
+     main="F&B - Gaussian")
+plot(density(ppp_fnb_km, sigma=0.4952614, edge=TRUE, kernel="epanechnikov"),
+     main="F&B - Epanechnikov")
+plot(density(ppp_fnb_km, sigma=0.4952614, edge=TRUE, kernel="quartic"),
+     main="F&B - Quartic")
+plot(density(ppp_fnb_km, sigma=0.4952614, edge=TRUE, kernel="disc"),
+     main="F&B - Disc")
+
+```
+
+-   **IT Services KDE (different kernels)**
+
+```{r}
+#| eval: false
+par(mfrow=c(2,2))
+plot(density(ppp_it_km, sigma=0.1157808, edge=TRUE, kernel="gaussian"),
+     main="IT - Gaussian")
+plot(density(ppp_it_km, sigma=0.1157808, edge=TRUE, kernel="epanechnikov"),
+     main="IT - Epanechnikov")
+plot(density(ppp_it_km, sigma=0.1157808, edge=TRUE, kernel="quartic"),
+     main="IT - Quartic")
+plot(density(ppp_it_km, sigma=0.1157808, edge=TRUE, kernel="disc"),
+     main="IT - Disc")
+
+```
+
+-   **Education KDE (different kernels)**
+
+```{r}
+#| eval: false
+par(mfrow=c(2,2))
+plot(density(ppp_edu_km, sigma=0.1157807, edge=TRUE, kernel="gaussian"),
+     main="Edu - Gaussian")
+plot(density(ppp_edu_km, sigma=0.1157807, edge=TRUE, kernel="epanechnikov"),
+     main="Edu - Epanechnikov")
+plot(density(ppp_edu_km, sigma=0.1157807, edge=TRUE, kernel="quartic"),
+     main="Edu - Quartic")
+plot(density(ppp_edu_km, sigma=0.1157807, edge=TRUE, kernel="disc"),
+     main="Edu - Disc")
+
+```
+
+## **6 Fixed and Adaptive KDE**
+
+### **6.1 Computing KDE by using fixed bandwidth**
+
+Compute a KDE layer by your define.
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| eval: false
+
+# Fixed-bandwidth KDE: 600 m = 0.6 km
+kde_fnb_fb <- density.ppp(ppp_fnb_km, sigma = 0.6, edge = TRUE, kernel = "gaussian")
+plot(kde_fnb_fb, main = "KDE (Fixed 600 m) – F&B")
+
+```
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| eval: false
+
+kde_it_fb  <- density.ppp(ppp_it_km,  sigma = 0.6, edge = TRUE, kernel = "gaussian")
+plot(kde_it_fb, main = "KDE (Fixed 600 m) – it")
+```
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| eval: false
+kde_edu_fb <- density.ppp(ppp_edu_km, sigma = 0.6, edge = TRUE, kernel = "gaussian")
+plot(kde_edu_fb, main = "KDE (Fixed 600 m) – Education")
+```
+
+### **6.2 Computing KDE by using adaptive bandwidth**
+
+Fixed bandwidth method is very sensitive to highly skew distribution of spatial point patterns over geographical units for example urban versus rural. We can solve the problem by using adaptive bandwidth instead.
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| eval: false
+
+kde_fnb_ab <- adaptive.density(ppp_fnb_km, method="kernel")
+plot(kde_fnb_fb, main = "kde_fnb_ab")
+
+```
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| eval: false
+
+kde_it_ab <- adaptive.density(ppp_it_km, method="kernel")
+plot(kde_it_ab, main = "kde_it_ab")
 
 
+```
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+#| eval: false
+
+kde_edu_ab <- adaptive.density(ppp_edu_km, method="kernel")
+plot(kde_edu_ab, main = "kde_edu_ab")
+
+```
+
+Let's take a look the difference:
+
+```{r}
+#| eval: false
+par(mfrow=c(1,2))
+plot(kde_fnb_fb, main = "Fixed bandwidth")
+plot(kde_fnb_ab, main = "Adaptive bandwidth")
+```
+
+```{r}
+#| eval: false
+par(mfrow=c(1,2))
+plot(kde_it_fb, main = "Fixed bandwidth")
+plot(kde_it_ab, main = "Adaptive bandwidth")
+```
+
+```{r}
+#| eval: false
+par(mfrow=c(1,2))
+plot(kde_edu_fb, main = "Fixed bandwidth")
+plot(kde_edu_ab, main = "Adaptive bandwidth")
+```
+
+## **7 Plotting cartographic quality KDE map**
+
+Convert the im kernal density objects into **SpatRaster** object by using `rast()`of **terra** package.
+
+```{r}
+
+kde_fnb_terra <- readRDS("data/aspatial/kde_rds/kde_fnb_terra.rds")
+kde_it_terra  <- readRDS("data/aspatial/kde_rds/kde_it_terra.rds")
+kde_edu_terra <- readRDS("data/aspatial/kde_rds/kde_edu_terra.rds")
+
+kde_fnb_terra
+kde_it_terra
+kde_edu_terra
+
+```
+
+```{r}
+#| eval: false
+ppp_fnb_km <- rescale.ppp(acra_56SG_ppp, 1000, "km")
+ppp_it_km  <- rescale.ppp(acra_62SG_ppp, 1000, "km")
+ppp_edu_km <- rescale.ppp(acra_85SG_ppp, 1000, "km")
+
+# Food & Beverage
+kde_fnb_fb <- density.ppp(ppp_fnb_km, sigma = 0.6, edge = TRUE, kernel = "gaussian")
+
+# IT Services
+kde_it_fb <- density.ppp(ppp_it_km, sigma = 0.6, edge = TRUE, kernel = "gaussian")
+
+# Education
+kde_edu_fb <- density.ppp(ppp_edu_km, sigma = 0.6, edge = TRUE, kernel = "gaussian")
+
+# Food & Beverage
+kde_fnb_terra <- rast(kde_fnb_fb)
+class(kde_fnb_terra)
+
+# IT Services
+kde_it_terra <- rast(kde_it_fb)
+class(kde_it_terra)
+
+# Education
+kde_edu_terra <- rast(kde_edu_fb)
+class(kde_edu_terra)
+
+```
+
+### **7.1 Assigning projection systems**
+
+In code chunk below, `crs()` of terra is used to assign the CRS information on *kde_childcareSG_bw_terra* layer.
+
+```{r}
+crs(kde_fnb_terra)  <- "EPSG:3414"
+crs(kde_it_terra)   <- "EPSG:3414"
+crs(kde_edu_terra)  <- "EPSG:3414"
+```
+
+```{r}
+kde_fnb_terra
+kde_it_terra
+kde_edu_terra
+```
+
+### **7.1.1 Plotting KDE map with tmap**
+
+Display the raster in cartographic quality map using **tmap** package.
+
+```{r}
+# Save SpatRaster KDE results
+saveRDS(kde_fnb_terra, "data/aspatial/kde_rds/kde_fnb_terra.rds")
+saveRDS(kde_it_terra,  "data/aspatial/kde_rds/kde_it_terra.rds")
+saveRDS(kde_edu_terra, "data/aspatial/kde_rds/kde_edu_terra.rds")
+
+```
+
+```{r}
+#| eval: false
+
+tmap_mode("plot") 
+tm_shape(kde_fnb_terra) +
+  tm_raster(style = "quantile", n = 7, title = "Density") +
+  tm_shape(mp19_subzone_proj) + tm_borders(lwd = 0.4) +
+  tm_layout(title = "KDE – Food & Beverage", frame = FALSE)
+
+tm_shape(kde_it_terra) +
+  tm_raster(style = "quantile", n = 7, title = "Density") +
+  tm_shape(mp19_subzone_proj) + tm_borders(lwd = 0.4) +
+  tm_layout(title = "KDE – IT Services", frame = FALSE)
+
+tm_shape(kde_edu_terra) +
+  tm_raster(style = "quantile", n = 7, title = "Density") +
+  tm_shape(mp19_subzone_proj) + tm_borders(lwd = 0.4) +
+  tm_layout(title = "KDE – Education", frame = FALSE)
+
+```
+
+## 
+
+## 8. **First Order SPPA**
+
+We focus on **Downtown Core, Orchard/River Valley, Jurong East, and Tampines** because they are persistent **≥90th-percentile KDE hotspots** across months and across sectors. Together they capture Singapore’s polycentric form—the **CBD**, the premier **retail spine**, and **two regional centres**—so results are comparable while still policy-relevant (street activation, transit access, mixed-use intensity).
+
+## 8.1 **Geospatial data wrangling**
+
+### 8.1.1 Extracting study area
+
+```{r}
+#| eval: false
+
+mpsz_sf <- st_read("data/geospatial/MasterPlan2019SubzoneBoundaryNoSeaKML.kml") %>% 
+  st_zm(drop = TRUE, what = "ZM") %>% st_transform(crs = 3414)
+
+extract_kml_field <- function(html_text, field_name) {
+  if (is.na(html_text) || html_text == "") return(NA_character_)
+  
+  page <- read_html(html_text)
+  rows <- page %>% html_elements("tr")
+  
+  value <- rows %>%
+    keep(~ html_text2(html_element(.x, "th")) == field_name) %>%
+    html_element("td") %>%
+    html_text2()
+  
+  if (length(value) == 0) NA_character_ else value
+}
+
+mpsz_sf <- mpsz_sf %>%
+  mutate(
+    REGION_N = map_chr(Description, extract_kml_field, "REGION_N"),
+    PLN_AREA_N = map_chr(Description, extract_kml_field, "PLN_AREA_N"),
+    SUBZONE_N = map_chr(Description, extract_kml_field, "SUBZONE_N"),
+    SUBZONE_C = map_chr(Description, extract_kml_field, "SUBZONE_C")
+  ) %>%
+  select(-Name, -Description) %>%
+  relocate(geometry, .after = last_col())
+
+mpsz_sf <- mpsz_sf %>%
+  filter(SUBZONE_N != "SOUTHERN GROUP",
+         PLN_AREA_N != "WESTERN ISLANDS",
+         PLN_AREA_N != "NORTH-EASTERN ISLANDS")
+
+```
+
+```{r}
+write_rds(mpsz_sf, 
+          "data/mpsz_cl.rds")
+```
+
+```{r}
+mpsz_sf <- readr::read_rds("data/mpsz_cl.rds")  
+stopifnot(sf::st_crs(mpsz_sf)$epsg == 3414)     
+
+```
+
+The code chunk below will be used to extract the target planning areas.
+
+```{r}
+pg <- mpsz_sf %>%
+  filter(PLN_AREA_N == "DOWNTOWN CORE")
+tm <- mpsz_sf %>%
+  filter(PLN_AREA_N == "ORCHARD")
+ck <- mpsz_sf %>%
+  filter(PLN_AREA_N == "JURONG EAST")
+jw <- mpsz_sf %>%
+  filter(PLN_AREA_N == "TAMPINES")
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(st_geometry(pg), main = "DOWNTOWN CORE")
+plot(st_geometry(tm), main = "ORCHARD")
+plot(st_geometry(ck), main = "JURONG EAST")
+plot(st_geometry(jw), main = "TAMPINES")
+```
+
+```{r}
+
+pg_owin <- spatstat.geom::as.owin(pg)
+tm_owin <- spatstat.geom::as.owin(tm)
+ck_owin <- spatstat.geom::as.owin(ck)
+jw_owin <- spatstat.geom::as.owin(jw)
 
 
+```
+
+```{r}
+acra_56_ppp <- spatstat.geom::as.ppp(acra_56)
+acra_62_ppp <- spatstat.geom::as.ppp(acra_62)
+acra_85_ppp <- spatstat.geom::as.ppp(acra_85)
+
+# F&B
+fnb_pg_ppp <- acra_56_ppp[pg_owin]; fnb_tm_ppp <- acra_56_ppp[tm_owin]
+fnb_ck_ppp <- acra_56_ppp[ck_owin]; fnb_jw_ppp <- acra_56_ppp[jw_owin]
+
+# IT
+it_pg_ppp  <- acra_62_ppp[pg_owin]; it_tm_ppp  <- acra_62_ppp[tm_owin]
+it_ck_ppp  <- acra_62_ppp[ck_owin]; it_jw_ppp  <- acra_62_ppp[jw_owin]
+
+# Education
+edu_pg_ppp <- acra_85_ppp[pg_owin]; edu_tm_ppp <- acra_85_ppp[tm_owin]
+edu_ck_ppp <- acra_85_ppp[ck_owin]; edu_jw_ppp <- acra_85_ppp[jw_owin]
+
+```
+
+```{r}
+fnb_pg_km <- spatstat.geom::rescale.ppp(fnb_pg_ppp, 1000, "km")
+fnb_tm_km <- spatstat.geom::rescale.ppp(fnb_tm_ppp, 1000, "km")
+fnb_ck_km <- spatstat.geom::rescale.ppp(fnb_ck_ppp, 1000, "km")
+fnb_jw_km <- spatstat.geom::rescale.ppp(fnb_jw_ppp, 1000, "km")
+
+it_pg_km  <- spatstat.geom::rescale.ppp(it_pg_ppp,  1000, "km")
+it_tm_km  <- spatstat.geom::rescale.ppp(it_tm_ppp,  1000, "km")
+it_ck_km  <- spatstat.geom::rescale.ppp(it_ck_ppp,  1000, "km")
+it_jw_km  <- spatstat.geom::rescale.ppp(it_jw_ppp,  1000, "km")
+
+edu_pg_km <- spatstat.geom::rescale.ppp(edu_pg_ppp, 1000, "km")
+edu_tm_km <- spatstat.geom::rescale.ppp(edu_tm_ppp, 1000, "km")
+edu_ck_km <- spatstat.geom::rescale.ppp(edu_ck_ppp, 1000, "km")
+edu_jw_km <- spatstat.geom::rescale.ppp(edu_jw_ppp, 1000, "km")
+
+```
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
 
 
+par(mfrow=c(2,2))
+plot(unmark(fnb_pg_km), main="F&B — Downtown Core")
+plot(unmark(fnb_tm_km), main="F&B — Orchard")
+plot(unmark(fnb_ck_km), main="F&B — Jurong East")
+plot(unmark(fnb_jw_km), main="F&B — Tampines")
+par(mfrow=c(1,1))
+
+```
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+
+
+par(mfrow=c(2,2))
+plot(unmark(it_pg_km), main="it — Downtown Core")
+plot(unmark(it_tm_km), main="it — Orchard")
+plot(unmark(it_ck_km), main="it — Jurong East")
+plot(unmark(it_jw_km), main="it — Tampines")
+par(mfrow=c(1,1))
+
+```
+
+```{r}
+#| fig.height: 6
+#| fig.width: 6
+
+par(mfrow=c(2,2))
+plot(unmark(edu_pg_km), main="edu — Downtown Core")
+plot(unmark(edu_tm_km), main="edu — Orchard")
+plot(unmark(edu_ck_km), main="edu — Jurong East")
+plot(unmark(edu_jw_km), main="edu — Tampines")
+par(mfrow=c(1,1))
+
+```
+
+### 8.1.2 **Clark and Evans Test**
+
+```{r}
+run_CE <- function(ppp_obj, alt = "two.sided", nsim = 999){
+  ce <- clarkevans.test(ppp_obj, correction="none",
+                        clipregion=NULL, alternative=alt, nsim=nsim)
+  print(ce); invisible(ce)}
+```
+
+###  F&B Industry
+
+```{r}
+run_CE(fnb_pg_km)  # Downtown Core
+run_CE(fnb_tm_km)  # Orchard
+run_CE(fnb_ck_km)  # Jurong East
+run_CE(fnb_jw_km)  # Tampines
+```
+
+###  IT Industry
+
+```{r}
+# --- IT ---
+run_CE(it_pg_km)# Downtown Core
+run_CE(it_tm_km)# Orchard
+run_CE(it_ck_km)# Jurong East
+run_CE(it_jw_km) # Tampines
+
+```
+
+### Education Industry
+
+```{r}
+# --- Education ---
+run_CE(edu_pg_km)# Downtown Core
+run_CE(edu_tm_km)# Orchard
+run_CE(edu_ck_km)# Jurong East
+run_CE(edu_jw_km) # Tampines
+```
+
+### 8.1.3 **Computing KDE surfaces by planning area**
+
+The code chunk below will be used to compute the KDE of these four planning area. ***bw.diggle*** method is used to derive the bandwidth of each
+
+```{r}
+#| fig.width: 11
+#| fig.height: 9
+#| dpi: 200
+
+# --- F&B ---
+par(mfrow=c(2,2), mar=c(3.5,3.5,3,5), cex=1.15)
+plot(density(edu_pg_km,  sigma=bw.diggle(edu_pg_km),  edge=TRUE),
+     main="Edu — Downtown Core",  ribargs=list(cex.axis=1.2))
+plot(density(edu_tm_km,  sigma=bw.diggle(edu_tm_km),  edge=TRUE),
+     main="Edu — Orchard",        ribargs=list(cex.axis=1.2))
+plot(density(edu_ck_km,  sigma=bw.diggle(edu_ck_km),  edge=TRUE),
+     main="Edu — Jurong East",    ribargs=list(cex.axis=1.2))
+plot(density(edu_jw_km,  sigma=bw.diggle(edu_jw_km),  edge=TRUE),
+     main="Edu — Tampines",       ribargs=list(cex.axis=1.2))
+par(mfrow=c(1,1))
+
+
+# --- IT ---
+par(mfrow=c(2,2))
+plot(density(it_pg_km,  sigma=bw.diggle(it_pg_km),  edge=TRUE, kernel="gaussian"),
+     main="IT — Downtown Core")
+plot(density(it_tm_km,  sigma=bw.diggle(it_tm_km),  edge=TRUE, kernel="gaussian"),
+     main="IT — Orchard")
+plot(density(it_ck_km,  sigma=bw.diggle(it_ck_km),  edge=TRUE, kernel="gaussian"),
+     main="IT — Jurong East")
+plot(density(it_jw_km,  sigma=bw.diggle(it_jw_km),  edge=TRUE, kernel="gaussian"),
+     main="IT — Tampines")
+par(mfrow=c(1,1))
+
+# --- Education ---
+par(mfrow=c(2,2))
+plot(density(edu_pg_km, sigma=bw.diggle(edu_pg_km), edge=TRUE, kernel="gaussian"),
+     main="Edu — Downtown Core")
+plot(density(edu_tm_km, sigma=bw.diggle(edu_tm_km), edge=TRUE, kernel="gaussian"),
+     main="Edu — Orchard")
+plot(density(edu_ck_km, sigma=bw.diggle(edu_ck_km), edge=TRUE, kernel="gaussian"),
+     main="Edu — Jurong East")
+plot(density(edu_jw_km, sigma=bw.diggle(edu_jw_km), edge=TRUE, kernel="gaussian"),
+     main="Edu — Tampines")
+par(mfrow=c(1,1))
+
+```
+
+## 9.  **2 nd Order Spatial Point Patterns Analysis Methods**
+
+```{r}
+set.seed(1234)
+```
+
+## 9.1 **Analysing Spatial Point Process Using G-Function**
+
+```{r}
+pa_dc <- mpsz_sf %>% dplyr::filter(PLN_AREA_N == "DOWNTOWN CORE")
+pa_or <- mpsz_sf %>% dplyr::filter(PLN_AREA_N == "ORCHARD")
+pa_je <- mpsz_sf %>% dplyr::filter(PLN_AREA_N == "JURONG EAST")
+pa_tm <- mpsz_sf %>% dplyr::filter(PLN_AREA_N == "TAMPINES")
+
+w_dc <- spatstat.geom::as.owin(pa_dc)
+w_or <- spatstat.geom::as.owin(pa_or)
+w_je <- spatstat.geom::as.owin(pa_je)
+w_tm <- spatstat.geom::as.owin(pa_tm)
+
+```
+
+Arccording the task of caculative the function is big,so we select one to clarify:
+
+```{r}
+ex_file <- file.path(out_dir, "FNB_56__Downtown_Core.rds")
+  plot(obj$envelopes$G, main = "G envelope")
+```
+
+```{r}
+ plot(obj$envelopes$F, main = "F envelope")
+```
+
+```{r}
+plot(obj$envelopes$K, . - r ~ r, xlab="d (m)", ylab="K(d)-r", main="K envelope"); abline(h=0, lty=2)
+```
+
+```{r}
+plot(obj$envelopes$L, . - r ~ r, xlab="d (m)", ylab="L(r)-r", main="L envelope"); abline(h=0, lty=2)
+```
+
+```{r}
+stkde_fnb <- readRDS("data/aspatial/kde_rds/STKDE_FNB_2025H1.rds")
+par(mfcol=c(2,3)); for(i in 1:6) plot(stkde_fnb, i, fix.range=TRUE,
+                                      main=paste("F&B STKDE — 2025-", sprintf("%02d",i), sep=""))
+par(mfcol=c(1,1))
+```
+
+```{r}
+#| fig.heigh: 12
+#| fig.width: 12
+#| warning: false
+fnb_2025 <- acra_sf_proj %>%
+  filter(ssic_2d == "56",
+         reg_date >= as.Date("2025-01-01"),
+         reg_date <= as.Date("2025-06-30")) %>%
+  mutate(month_num = month(reg_date))
+fnb_ppp <- spatstat.geom::as.ppp(fnb_2025 %>% select(month_num))
+get_win <- function(pa) {
+  mpsz_sf %>% filter(PLN_AREA_N == pa) %>%
+    st_union() %>% spatstat.geom::as.owin()
+}
+
+areas <- c("DOWNTOWN CORE","ORCHARD","JURONG EAST","TAMPINES")
+for (pa in areas) {
+  win <- get_win(pa)
+  fnb_pa <- fnb_ppp[win]                                  
+  stkde <- sparr::spattemp.density(fnb_pa)                
+  out <- paste0("data/aspatial/kde_rds/STKDE_FNB_",
+                gsub(" ","",pa), "_2025H1.rds")
+  saveRDS(stkde, out)
+  par(mfcol = c(2,3), mar = c(2,2,2,2))
+  for (i in 1:6) {
+    plot(stkde, i, override.par=FALSE, fix.range=TRUE,
+         main = paste0("F&B STKDE — ", pa, " (", sprintf("2025-%02d", i), ")"))
+    plot(win, add = TRUE)
+  }
+  par(mfcol = c(1,1))
+}
+
+```
