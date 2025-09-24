@@ -1,0 +1,440 @@
+---
+title: "Take-Home Exercise 01"
+author: "BingBing"
+date: "2025-09-20"
+format: html
+execute: 
+  eval: true
+  echo: true
+  warning: false
+  freeze: true
+---
+
+# 1. Overview
+
+This exercise applies spatial point pattern analysis methods to study the distribution of newly registered corporate entities in Singapore. Following the Data Analytics Lifecycle and based on the hands-on practices, the analysis covers data preparation, industry classification, geocoding, and geovisualisation.
+
+# 2. **Installing and Launching the R Packages**
+
+The following R packages will be used in this exercise:
+
+| **Package** | **Purpose** | **Use Case in Exercise** |
+|-------------|-------------|--------------------------|
+
+\
+\
+\
+\
+\
+
+```{r}
+pacman::p_load(tidyverse, readr, lubridate,sf,tmap, rvest,httr, jsonlite, dplyr, purrr,spatstat)
+```
+
+## 2.1 **Reproducibilty**
+
+For reproducible results of this exercise, we will use seed value, `1234`.
+
+```{r}
+set.seed(1234)
+```
+
+# 3. Data Import & Preparation
+
+The following 2 datasets will be used in this exercise.
+
+| **Dataset Name** | **Description** | **Format** | **Source** |
+|------------------|-----------------|------------|------------|
+
+-   ACRA datasets
+
+-   postal code\
+
+Import ACRA datasets from **data.gov.sg**.
+
+```{r}
+acra_files <- list.files("data/aspatial/ACRA", 
+                         pattern = "*.csv", 
+                         full.names = TRUE)
+```
+
+```{r}
+acra_raw <- map_dfr(acra_files, read_csv)
+```
+
+Select relevant fields and filter entities registered between **1 Jan 2024 and 30 Jun 2025**.
+
+```{r}
+acra_clean <- acra_raw %>%
+  select(
+    uen,
+    entity_name,
+    ssic_code = primary_ssic_code,
+    ssic_desc = primary_ssic_description,
+    postal = postal_code,
+    reg_date = registration_incorporation_date
+  ) %>%
+  filter(reg_date >= "2024-01-01", reg_date <= "2025-06-30") %>%
+  filter(!is.na(postal)) %>%
+  distinct(uen, .keep_all = TRUE)   
+   
+glimpse(acra_clean)
+```
+
+According to SSIC 2020 (Singapore Standard Industrial Classification), this study selected three industry categories:
+
+-   56 (Food and Beverage Service Activities)
+
+-   62 (Computer Programming and IT Consultancy Activities)
+
+-   85 (Education)
+
+```{r}
+# Select the industry according to the official classification of SSIC 2020
+chosen_ssic <- c("56", "62", "85")
+
+industry_labels <- c(
+  "56" = "Food & Beverage",
+  "62" = "IT Services",
+  "85" = "Education")
+
+acra_selected <- acra_clean %>%
+  mutate(ssic_2d = str_sub(ssic_code, 1, 2)) %>%
+  filter(ssic_2d %in% chosen_ssic)
+
+acra_selected %>%
+  count(ssic_2d)
+
+```
+
+```{#rds file}
+if(!dir.exists("data/aspatial/kde_rds")) {
+  dir.create("data/aspatial/kde_rds", recursive = TRUE)
+}
+
+for (ind in industries) {
+  sub <- acra_sf_proj %>% filter(ssic_2d == ind)
+  coords <- st_coordinates(sub)
+  
+  if (nrow(coords) > 30) {
+    ppp_ind <- spatstat.geom::ppp(
+      x = coords[,1], y = coords[,2],
+      window = spatstat.geom::as.owin(mp19_subzone_proj)
+    )
+    
+    bw <- bw.diggle(ppp_ind)  
+    kde_ind <- density.ppp(ppp_ind, sigma = bw)  # KDE
+    saveRDS(kde_ind, paste0("data/aspatial/kde_rds/kde_", ind, ".rds"))
+  }
+}
+```
+
+```{industries <- c("56", "62", "85")}
+coords_all <- st_coordinates(acra_sf_proj)
+ppp_all <- spatstat.geom::ppp(
+  x = coords_all[,1],
+  y = coords_all[,2],
+  window = spatstat.geom::as.owin(mp19_subzone_proj)
+)
+bw_global <- bw.diggle(ppp_all)
+for (ind in industries) {
+  sub_ind <- acra_sf_proj %>% filter(ssic_2d == ind)
+  sub_ind <- sub_ind %>%
+    mutate(year_qtr = paste0(year(reg_date), "Q", quarter(reg_date)))
+  
+  for (q in unique(sub_ind$year_qtr)) {
+    sub_q <- sub_ind %>% filter(year_qtr == q)
+    coords <- st_coordinates(sub_q)
+    
+    if (nrow(coords) > 30) {
+      ppp_q <- spatstat.geom::ppp(
+        x = coords[,1], 
+        y = coords[,2],
+        window = spatstat.geom::as.owin(mp19_subzone_proj)
+      )
+      
+      kde_q <- density.ppp(ppp_q, sigma = bw_global)
+      saveRDS(kde_q, file = paste0("data/aspatial/kde_rds/kde_", ind, "_", q, ".rds"))
+    }
+  }
+}
+
+```
+
+Load **Master Plan 2019 Subzone Boundary (No Sea)** for spatial reference.
+
+```{r}
+mp19_subzone <- st_read("data/geospatial/MasterPlan2019SubzoneBoundaryNoSeaKML.kml")
+mp19_subzone <- st_zm(mp19_subzone, drop = TRUE, what = "ZM")
+```
+
+check the data:
+
+```{r}
+glimpse(mp19_subzone)
+tmap_mode("view")
+tm_shape(mp19_subzone) + tm_borders()
+```
+
+Use the OneMap API (2019) to geocode postal codes. Please register on the OneMap portal to obtain your own API token. Geocoded results were saved as `data/aspatial/acra_postal_coords.csv`. Merge geocoded coordinates and convert to sf object.
+
+```{r}
+coords_all <- read_csv("data/aspatial/acra_postal_coords.csv")
+
+acra_geo <- acra_selected %>%
+  left_join(coords_all, by = "postal") %>%
+  drop_na(lat, lon)
+
+acra_sf <- st_as_sf(acra_geo, coords = c("lon", "lat"), crs = 4326)
+acra_sf <- st_transform(acra_sf, st_crs(mp19_subzone))
+```
+
+you can check the output by :
+
+```{r}
+tmap_mode("view")
+tm_shape(mp19_subzone) + tm_borders() +
+  tm_shape(acra_sf) + tm_dots(col = "ssic_2d", size = 0.05)
+```
+
+# 4. Spatial and Spatio-temporal KDE
+
+Kernel Density Estimation (KDE) is applied to identify the spatial concentration of newly registered corporate entities. This section follows the approach in Hands-on Exercise.
+```{r}
+acra_sf_proj <- st_transform(acra_sf, 3414)
+mp19_subzone_proj <- st_transform(mp19_subzone, 3414)
+```
+
+## 4.1 Spatial KDE by Industry
+
+```{r}
+#| fig.height: 9
+#| fig.width: 9
+#| warning: false
+
+industries <- c("56", "62", "85")
+for (ind in industries) {
+  rds_file <- paste0("data/aspatial/kde_rds/kde_", ind, ".rds")
+  
+  if (file.exists(rds_file)) {
+    kde_ind <- readRDS(rds_file)
+    
+    plot(kde_ind, main = paste("KDE -", industry_labels[ind]))
+    plot(mp19_subzone_proj$geometry, add = TRUE)
+  }
+}
+
+```
+
+## 4.2 Spatio-temporal KDE by Industry (Quarterly)
+
+```{r}
+#| fig.height: 9
+#| fig.width: 9
+#| warning: false
+
+for (ind in industries) {
+  files <- list.files("data/aspatial/kde_rds", pattern = paste0("kde_", ind, "_"), full.names = TRUE)
+  
+  for (f in files) {
+    kde_q <- readRDS(f)
+    q <- str_extract(f, "20\\d{2}Q[1-4]")
+    
+    plot(kde_q, main = paste("KDE -", industry_labels[ind], q))
+    plot(mp19_subzone_proj$geometry, add = TRUE)
+  }
+}
+
+```
+
+#### 
+
+## 5. Second-order Analysis (Per Industry & Cross-industry)
+
+The quadrat test is used to statistically evaluate whether the spatial distribution of business entities within each industry follows Complete Spatial Randomness (CSR). A significant p-value (e.g., \< 0.05) indicates deviation from CSR, suggesting clustering or regularity.
+
+## 5.1 Quadrat Test by Industry
+
+```{r}
+#| fig.height: 9
+#| fig.width: 9
+#| warning: false
+
+for (ind in industries) {
+  rds_file <- paste0("data/aspatial/kde_rds/quadrat_", ind, ".rds")
+  
+  sub <- acra_sf_proj %>% filter(ssic_2d == ind)
+  coords <- st_coordinates(sub)
+  
+  if (nrow(coords) > 30) {
+    ppp_ind <- spatstat.geom::ppp(
+      x = coords[,1], 
+      y = coords[,2],
+      window = spatstat.geom::as.owin(mp19_subzone_proj)
+    )
+ 
+    if (!file.exists(rds_file)) {
+      qtest_ind <- quadrat.test(ppp_ind)
+      saveRDS(qtest_ind, rds_file)
+    }
+    
+    qtest_ind <- readRDS(rds_file)
+    
+    print(paste("Quadrat test result for industry:", industry_labels[ind]))
+    print(qtest_ind)
+    plot(ppp_ind, main = paste("Quadrat Test -", industry_labels[ind]))
+    plot(quadratcount(ppp_ind, nx = 4, ny = 4), add = TRUE)
+  }
+}
+
+```
+
+### 5.2 Nearest Neighbour Analysis
+
+The nearest neighbour functions provide second-order summaries of spatial point patterns:
+- **G-function**: Distribution of nearest neighbour distances.  
+- **F-function**: Empty space distribution.  
+- **K-function**: Measures clustering or dispersion at different scales.  
+
+We compare the observed functions with the theoretical expectation under CSR (Complete Spatial Randomness).
+```{r}
+#| warning: false
+
+
+for (ind in industries) {
+  sub <- acra_sf_proj %>% filter(ssic_2d == ind)
+  coords <- st_coordinates(sub)
+  
+  if (nrow(coords) > 30) {
+    ppp_ind <- spatstat.geom::ppp(
+      x = coords[,1], 
+      y = coords[,2],
+      window = spatstat.geom::as.owin(mp19_subzone_proj)
+    )
+    
+    # 计算 G, F, K
+    g_res <- Gest(ppp_ind)
+    f_res <- Fest(ppp_ind)
+    k_res <- Kest(ppp_ind)
+    
+  
+    par(mfrow=c(1,3))  
+    plot(g_res, main = paste("G-function -", industry_labels[ind]))
+    plot(f_res, main = paste("F-function -", industry_labels[ind]))
+    plot(k_res, main = paste("K-function -", industry_labels[ind]))
+    par(mfrow=c(1,1)) 
+  }
+}
+
+```
+```{r}
+#| warning: false
+
+for (ind in industries) {
+  sub <- acra_sf_proj %>% filter(ssic_2d == ind)
+  coords <- st_coordinates(sub)
+  
+  if (nrow(coords) > 30) {
+    ppp_ind <- spatstat.geom::ppp(
+      x = coords[,1], y = coords[,2],
+      window = spatstat.geom::as.owin(mp19_subzone_proj)
+    )
+    
+    g_res <- Gest(ppp_ind)
+    plot(g_res, main = paste("G-function -", industry_labels[ind]))
+  }
+}
+
+```
+```{r}
+#| warning: false
+
+for (ind in industries) {
+  sub <- acra_sf_proj %>% filter(ssic_2d == ind)
+  coords <- st_coordinates(sub)
+  
+  if (nrow(coords) > 30) {
+    ppp_ind <- spatstat.geom::ppp(
+      x = coords[,1], y = coords[,2],
+      window = spatstat.geom::as.owin(mp19_subzone_proj)
+    )
+    
+    f_res <- Fest(ppp_ind)
+    plot(f_res, main = paste("F-function -", industry_labels[ind]))
+  }
+}
+```
+
+```{r}
+#| warning: false
+
+for (ind in industries) {
+  sub <- acra_sf_proj %>% filter(ssic_2d == ind)
+  coords <- st_coordinates(sub)
+  
+  if (nrow(coords) > 30) {
+    ppp_ind <- spatstat.geom::ppp(
+      x = coords[,1], y = coords[,2],
+      window = spatstat.geom::as.owin(mp19_subzone_proj)
+    )
+    
+    k_res <- Kest(ppp_ind)
+    plot(k_res, main = paste("K-function -", industry_labels[ind]))
+  }
+}
+```
+
+
+```{r}
+
+industries <- c("56", "62", "85")
+
+
+if(!dir.exists("data/aspatial/kde_rds")) {
+  dir.create("data/aspatial/kde_rds", recursive = TRUE)
+}
+
+for (ind in industries) {
+  sub <- acra_sf_proj %>% filter(ssic_2d == ind)
+  coords <- st_coordinates(sub)
+  
+  if (nrow(coords) > 30) {
+    ppp_ind <- spatstat.geom::ppp(
+      x = coords[,1], 
+      y = coords[,2],
+      window = spatstat.geom::as.owin(mp19_subzone_proj)
+    )
+    
+
+    rds_file <- paste0("data/aspatial/kde_rds/Lenv_", ind, ".rds")
+    
+    if (file.exists(rds_file)) {
+      L_env <- readRDS(rds_file)
+    } else {
+      L_env <- envelope(ppp_ind, Lest, nsim = 99, rank = 1, global = TRUE,
+                        savepatterns = FALSE, verbose = FALSE)
+      saveRDS(L_env, rds_file)
+    }
+    
+    plot(L_env, . - r ~ r,
+         main = paste("L-function (CSR Envelope) -", industry_labels[ind]),
+         xlab = "d", ylab = "L(d) - r")
+  }
+}
+
+
+```
+
+
+
+
+##### 5.3 Cross-K (可选)
+
+## 5.1 G/F/K/L Functions per Industry
+
+
+5.2 Monte Carlo Envelopes (CSR Test)
+
+
+5.3 Cross-industry Interaction (Kcross / Gcross)
+

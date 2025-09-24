@@ -34,10 +34,12 @@ website:
             href: "In-class_Ex/In-class_Ex03/In-class_Ex03b.html"
           - text: "In-class Exercise 04"
             href: "In-class_Ex/In-class_Ex04/In-class_Ex04.html"
-         
+      - text: "Take-Home Exercise"
+        menu:
+          - text: "Take-Home Exercise 01"
+            href: "Take-Home_Exercises/Take-Home_Exercise01/Take-Home_Exercise01.html"
            
-            
-            
+          
 
 format:
   html:

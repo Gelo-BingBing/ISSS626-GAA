@@ -1,0 +1,15 @@
+{
+  "hash": "da2441df1a6d82173661733c2e727ef3",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"Take-Home Exercise 01\"\nauthor: \"BingBing\"\ndate: \"2025-09-23\"\nformat: html\nexecute: \n  echo: true\n  warning: false\n  message: false\n---\n\n\n\n## 1. Data Preparation\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\npacman::p_load(tidyverse, readr, lubridate)\n```\n:::\n\n\n\n## 2. Data import\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\nacra_files <- list.files(\"data/aspatial/ACRA\", \n                         pattern = \"*.csv\", \n                         full.names = TRUE)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nacra_raw <- map_dfr(acra_files, read_csv)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nacra_clean <- acra_raw %>%\n  select(uen,\n         entity_name,\n         ssic_code = primary_ssic_code,\n         ssic_desc = primary_ssic_description,\n         postal = postal_code,\n         reg_date = registration_incorporation_date)\n         \nacra_clean <- acra_clean %>%\n  filter(reg_date >= \"2024-01-01\", reg_date <= \"2025-06-30\") %>%  \n  filter(!is.na(postal))                                         \n\nglimpse(acra_clean)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\nRows: 108,877\nColumns: 6\n$ uen         <chr> \"202416660D\", \"202431737K\", \"202506117H\", \"202400003R\", \"2…\n$ entity_name <chr> \"ARUQUA PTE. LTD.\", \"AGRO SINDO PTE. LTD.\", \"A5 SG LAMBDA …\n$ ssic_code   <dbl> 70201, 1413, 64202, 70201, 62022, 63209, 46551, 77101, 592…\n$ ssic_desc   <chr> \"na\", \"na\", \"na\", \"na\", \"MANAGED SECURITY SERVICES PROVIDE…\n$ postal      <chr> \"49422\", \"48823\", \"048948\", \"575744\", \"438639\", \"338729\", …\n$ reg_date    <date> 2024-04-26, 2024-08-05, 2025-02-12, 2024-01-01, 2024-01-0…\n```\n\n\n:::\n:::\n\n\n\n```         \nAccording to SSIC 2020 (Singapore Standard Industrial Classification), this study selected three industry categories: 56 (Food and Beverage Service Activities), 62 (Computer Programming and IT Consultancy Activities), 85 (Education)\n```\n\n\n\n::: {.cell}\n\n```{.r .cell-code}\n# Select the industry according to the official classification of SSIC 2020\nchosen_ssic <- c(\"56\", \"62\", \"85\")\n\nacra_selected <- acra_clean %>%\n  mutate(ssic_2d = str_sub(ssic_code, 1, 2)) %>%\n  filter(ssic_2d %in% chosen_ssic)\n\nacra_selected %>%\n  count(ssic_2d)\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n# A tibble: 3 × 2\n  ssic_2d     n\n  <chr>   <int>\n1 56       5758\n2 62       8740\n3 85       3825\n```\n\n\n:::\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
