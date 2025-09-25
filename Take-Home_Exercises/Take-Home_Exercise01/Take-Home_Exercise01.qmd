@@ -3,8 +3,12 @@ title: "Take-Home Exercise 01"
 author: "BingBing"
 date: "2025-09-20"
 format: html
-execute: 
+execute:
+  cache: true
+  freeze: true
+  echo: true
   warning: false
+  message: false
 ---
 
 ## 1. Overview
@@ -22,6 +26,15 @@ This exercise applies spatial point pattern analysis methods to study the distri
 ```{r}
 pacman::p_load(tidyverse, readr, lubridate,sf,tmap, rvest,httr, jsonlite, dplyr, purrr,spatstat,terra,spatstat.explore,stars,spatstat.geom,rlang)
 
+```
+
+```{r}
+#| label: setup-tmap
+#| include: false
+
+knitr::opts_chunk$set(dev = "png")
+tmap::tmap_options(basemaps = NULL) 
+tmap_mode("plot")
 ```
 
 ## 3. Data Import & Preparation
@@ -43,6 +56,7 @@ acra_files <- list.files("data/aspatial/ACRA",
 ```
 
 ```{r}
+#| cache: true
 acra_raw <- map_dfr(acra_files, read_csv)
 ```
 
@@ -102,7 +116,7 @@ check the data:
 
 ```{r}
 glimpse(mp19_subzone)
-tmap_mode("view")
+tmap_mode("plot")
 tm_shape(mp19_subzone) + tm_borders()
 ```
 
@@ -122,9 +136,11 @@ acra_sf <- st_transform(acra_sf, st_crs(mp19_subzone))
 you can check the output by :
 
 ```{r}
+#| eval: false
 tmap_mode("view")
 tm_shape(mp19_subzone) + tm_borders() +
-  tm_shape(acra_sf) + tm_dots(col = "ssic_2d", size = 0.05)
+  tm_shape(acra_sf) + tm_dots(col="ssic_2d", size=0.05)
+
 ```
 
 ```{r}
@@ -717,7 +733,7 @@ w_tm <- spatstat.geom::as.owin(pa_tm)
 Arccording the task of caculative the function is big,so we select one to clarify:
 
 ```{r}
-
+#| eval: false
 ppp_pa <- readRDS("data/aspatial/ppa_rds/FNB_56__Downtown_Core.rds") 
 ppp_pa <- fnb_pg_km  
 if (ppp_pa$window$type != "polygonal") {
@@ -750,25 +766,10 @@ par(mfrow=c(1,1)); dev.off()
 #| fig.width: 11
 #| fig.height: 9
 #| dpi: 200
-
-
 rds_path <- "data/aspatial/kde_rds/envelope_FNB_DowntownCore_n99.rds"
 stopifnot(file.exists(rds_path))
 env_dc <- readRDS(rds_path)
-
-# (optional) sanity check nsim
-if (!is.null(env_dc$meta$nsim) && env_dc$meta$nsim != 99) {
-  warning(sprintf("RDS was built with nsim=%s (not 99).", env_dc$meta$nsim))
-}
-
 G_env <- env_dc$G; F_env <- env_dc$F; K_env <- env_dc$K; L_env <- env_dc$L
-
-par(mfrow=c(2,2))
-plot(G_env, xlim=c(0,0.6), main="G envelope — F&B Downtown Core")
-plot(F_env, xlim=c(0,0.6), main="F envelope — F&B Downtown Core")
-plot(K_env, . - theo ~ r, xlab="d (km)", ylab="K(d)-theo", main="K envelope"); abline(h=0,lty=2)
-plot(L_env, . - theo ~ r, xlab="d (km)", ylab="L(d)-theo", main="L envelope"); abline(h=0,lty=2)
-par(mfrow=c(1,1))
 
 ```
 
@@ -835,8 +836,6 @@ save_png_if_missing(
 )
 
 ```
-
-
 
 **F&B STKDE (Jan–Jun 2025) — key insights**
 
