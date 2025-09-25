@@ -1030,7 +1030,7 @@ run_CE <- function(ppp_obj, alt = "two.sided", nsim = 999){
   print(ce); invisible(ce)}
 ```
 
-###  F&B Industry
+### F&B Industry
 
 ```{r}
 run_CE(fnb_pg_km)  # Downtown Core
@@ -1039,7 +1039,7 @@ run_CE(fnb_ck_km)  # Jurong East
 run_CE(fnb_jw_km)  # Tampines
 ```
 
-###  IT Industry
+### IT Industry
 
 ```{r}
 # --- IT ---
@@ -1110,7 +1110,7 @@ par(mfrow=c(1,1))
 
 Neighbourhood-led, transit-adjacent pattern. **Downtown Core** shows low, scattered intensity—adult/enrichment near MRT, limited residential catchment. **Orchard** forms a light linear band along the retail spine. **Jurong East** shows broader mid-level spread around the interchange and residential edges. **Tampines** is the clearest hotspot: compact, high intensity centered on the Town Centre/MRT, matching school and family-housing catchments. **Planning:** prioritise small classrooms/shared facilities near **Jurong East** and **Tampines** nodes; co-locate with community spaces and transit; keep limited, accessible central offerings for after-work learners while avoiding over-concentration in any single town.
 
-## 9.  **2 nd Order Spatial Point Patterns Analysis Methods**
+## 9. **2 nd Order Spatial Point Patterns Analysis Methods**
 
 ```{r}
 set.seed(1234)
@@ -1134,40 +1134,46 @@ w_tm <- spatstat.geom::as.owin(pa_tm)
 Arccording the task of caculative the function is big,so we select one to clarify:
 
 ```{r}
+ppp_pa <- readRDS("data/aspatial/ppa_rds/FNB_56__Downtown_Core.rds") 
+ppp_pa <- fnb_pg_km  
+if (ppp_pa$window$type != "polygonal") {
+  ppp_pa$window <- spatstat.geom::as.polygonal(ppp_pa$window)
+}
 
-out_dir <- "Take-Home_Exercise01/data/aspatial" 
-ex_file <- file.path(out_dir, "FNB_56__Downtown_Core.rds")
-```
+set.seed(123)
+G_env <- spatstat.explore::envelope(ppp_pa, Gest, correction="border", nsim=199)
+F_env <- spatstat.explore::envelope(ppp_pa, Fest, correction="border", nsim=199)
+K_env <- spatstat.explore::envelope(ppp_pa, Kest, correction="iso", nsim=199, global=TRUE)
+L_env <- spatstat.explore::envelope(ppp_pa, Lest, correction="iso", nsim=199, global=TRUE)
 
-```{r}
- plot(obj$envelopes$F, main = "F envelope")
+par(mfrow=c(2,2))
+plot(G_env, xlim=c(0,0.6), main="G envelope — F&B Downtown Core")
+plot(F_env, xlim=c(0,0.6), main="F envelope — F&B Downtown Core")
+plot(K_env, . - theo ~ r, xlab="d (km)", ylab="K(d)-theo", main="K envelope"); abline(h=0,lty=2)
+plot(L_env, . - theo ~ r, xlab="d (km)", ylab="L(d)-theo", main="L envelope"); abline(h=0,lty=2)
+par(mfrow=c(1,1))
+
 ```
 
 -   **Random locations are closer to points than under CSR**, indicating **space is well covered by facilities** and supports clustering around accessible areas (transit/town hubs).
 
-```{r}
-plot(obj$envelopes$K, . - r ~ r, xlab="d (m)", ylab="K(d)-r", main="K envelope"); abline(h=0, lty=2)
-```
+<!-- -->
 
 -   **Clustering persists over multiple distances**, not just locally—evidence of **polycentric, multi-scale aggregation**.
 
-```{r}
-plot(obj$envelopes$L, . - r ~ r, xlab="d (m)", ylab="L(r)-r", main="L envelope"); abline(h=0, lty=2)
-```
+<!-- -->
 
 -   **Strong, scale-robust clustering** with **no regular (inhibitory) spacing**. Together, G/F/K/L agree: new firms form **dense cores with secondary clustered nodes**, matching the KDE hotspots.
 
-```{r}
-stkde_fnb <- readRDS("data/aspatial/kde_rds/STKDE_FNB_2025H1.rds")
-par(mfcol=c(2,3)); for(i in 1:6) plot(stkde_fnb, i, fix.range=TRUE,
-                                      main=paste("F&B STKDE — 2025-", sprintf("%02d",i), sep=""))
-par(mfcol=c(1,1))
-```
+**Insight (F&B STKDE, Jan–Jun 2025)**\
+
+Across the four centres, hotspots are persistent in **Orchard/River Valley**, with the strongest and most compact intensities every month. The **Downtown Core** remains active but more diffuse—consistent with office-driven F&B that scatters along the CBD fringe. **Jurong East** shows the clearest month-on-month build-up, with intensity rising from Feb and peaking by **May–June**, signalling accelerating openings around the interchange/retail cluster. **Tampines** stays low–moderate for most months, with a visible uptick in **June**. Overall, the temporal profile points to a mid-year ramp (Q2) rather than a January surge, while the spatial pattern confirms a **polycentric** structure anchored by Orchard and the CBD, and strengthening secondary growth in Jurong East.
 
 ```{r}
-#| fig.heigh: 12
-#| fig.width: 12
+#| fig.heigh: 30
+#| fig.width: 30
 #| warning: false
+
 fnb_2025 <- acra_sf_proj %>%
   filter(ssic_2d == "56",
          reg_date >= as.Date("2025-01-01"),
@@ -1197,3 +1203,19 @@ for (pa in areas) {
 }
 
 ```
+
+**F&B STKDE (Jan–Jun 2025) — key insights**
+
+Across months, intensity concentrates in Orchard and parts of Tampines, with weaker, more fragmented activity in Jurong East and the Downtown Core. Orchard shows a persistent west–central hotspot that strengthens in Apr–Jun, suggesting steady retail-driven entry. Tampines exhibits a south-western focus in Jan–Feb, dips in Mar–Apr, then rebounds by Jun—consistent with phased openings around town-center corridors. Jurong East remains comparatively cool, with small pockets near transit nodes, while the Downtown Core stays low and stable, likely reflecting higher costs and corporate-office bias rather than F&B formation. Overall, spatial peaks are stable in place but vary in magnitude month-to-month, indicating cyclical demand rather than wholesale shifts in preferred locations.
+
+How these findings can be used to support urban land use planning and management？
+
+The maps and statistics reveal distinct formation logics by sector and location. F&B concentrates along pedestrian-rich retail corridors (Orchard, Tampines) and at transit interchanges, with month-to-month amplitude changes but stable geography. IT Services cluster tightly in innovation and Grade-A office precincts (one-north, CBD fringe). Education openings are broader, following residential catchments and access to schools and MRT. K/L functions exceeding CSR at short–medium ranges confirm clustering for F&B and IT; Education shows milder, short-range aggregation; the Downtown Core exhibits near-random patterns for F&B.
+
+Transport and public realm. Because clusters align with MRT nodes, extend the “station halo” through shade, seating, lighting, and wayfinding to pull demand onto adjacent streets and reduce rent pressure on prime frontages. In Tampines and Orchard, support evening economy with footpath capacity, loading windows, and event-period crowd management aligned to the observed Apr–Jun lift.
+
+Commercial space strategy. Time unit releases and tenders to sectoral cycles: pre-lease ahead of Q2 surges in Orchard; streamline fit-out in Q1–Q2 for Tampines. Curate Downtown Core edge locations (waterfronts, heritage lanes) for lifestyle anchors to diversify beyond office demand without over-concentrating F&B.
+
+Sector-specific support. For IT, preserve affordable, flexible floorspace (co-working, labs) near one-north and CBD fringe; ensure top-tier digital infrastructure and last-mile links to universities. For Education, prioritize safe routes, ground-floor accessibility, and proximity to estates where diffuse but steady demand appears.
+
+Targeting public-realm upgrades, flexible zoning, timed space releases, and sector-specific programs to these empirically observed patterns will yield low-regret, place-sensitive actions that grow vibrant, inclusive commercial districts while managing externalities.
