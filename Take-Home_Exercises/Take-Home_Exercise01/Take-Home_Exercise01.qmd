@@ -1169,7 +1169,6 @@ Across the four centres, hotspots are persistent in **Orchard/River Valley**, wi
 #| fig.heigh: 30
 #| fig.width: 30
 #| warning: false
-#| eval: false
 
 fnb_2025 <- acra_sf_proj %>%
   filter(ssic_2d == "56",
