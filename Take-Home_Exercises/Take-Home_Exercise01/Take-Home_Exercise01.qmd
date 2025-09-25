@@ -4,7 +4,6 @@ author: "BingBing"
 date: "2025-09-20"
 format: html
 execute: 
-  eval: true
   echo: false
   warning: false
   freeze: true
@@ -300,39 +299,6 @@ clarkevans.test(ppp_edu,
 ### **4.3.2 Perform the Clark-Evans test with CSR**
 
 In the code chunk below, the argument method = “MonteCarlo” is used. In this case, the p-value for the test is computed by comparing the observed value of R to the results obtained from nsim (i.e. 39, 99, 999) simulated realisations of Complete Spatial Randomness conditional on the observed number of points.
-
-```{r}
-#| warning: false
-#| eval: false
-
-# Food & Beverage
-ce_fnb <- clarkevans.test(ppp_fnb,
-                          correction = "none",
-                          clipregion = sg_owin,
-                          alternative = c("clustered"),
-                          method = "MonteCarlo",
-                          nsim = 99)
-saveRDS(ce_fnb, "data/aspatial/kde_rds/CE_FNB.rds")
-
-# IT Services
-ce_it <- clarkevans.test(ppp_it,
-                         correction = "none",
-                         clipregion = sg_owin,
-                         alternative = c("clustered"),
-                         method = "MonteCarlo",
-                         nsim = 99)
-saveRDS(ce_it, "data/aspatial/kde_rds/CE_IT.rds")
-
-# Education
-ce_edu <- clarkevans.test(ppp_edu,
-                          correction = "none",
-                          clipregion = sg_owin,
-                          alternative = c("clustered"),
-                          method = "MonteCarlo",
-                          nsim = 99)
-saveRDS(ce_edu, "data/aspatial/kde_rds/CE_EDU.rds")
-
-```
 
 ```{r}
 ce_fnb <- readRDS("data/aspatial/kde_rds/CE_FNB.rds")
@@ -856,7 +822,7 @@ We focus on **Downtown Core, Orchard/River Valley, Jurong East, and Tampines** b
 ### 8.1.1 Extracting study area
 
 ```{r}
-#| eval: false
+#| cache: true
 
 mpsz_sf <- st_read("data/geospatial/MasterPlan2019SubzoneBoundaryNoSeaKML.kml") %>% 
   st_zm(drop = TRUE, what = "ZM") %>% st_transform(crs = 3414)
@@ -1065,8 +1031,8 @@ run_CE(edu_jw_km) # Tampines
 The code chunk below will be used to compute the KDE of these four planning area. ***bw.diggle*** method is used to derive the bandwidth of each
 
 ```{r}
-#| fig.width: 11
-#| fig.height: 9
+#| fig.width: 20
+#| fig.height: 20
 #| dpi: 200
 
 # --- F&B ---
@@ -1134,6 +1100,7 @@ w_tm <- spatstat.geom::as.owin(pa_tm)
 Arccording the task of caculative the function is big,so we select one to clarify:
 
 ```{r}
+#| eval: false 
 ppp_pa <- readRDS("data/aspatial/ppa_rds/FNB_56__Downtown_Core.rds") 
 ppp_pa <- fnb_pg_km  
 if (ppp_pa$window$type != "polygonal") {
@@ -1141,10 +1108,45 @@ if (ppp_pa$window$type != "polygonal") {
 }
 
 set.seed(123)
-G_env <- spatstat.explore::envelope(ppp_pa, Gest, correction="border", nsim=199)
-F_env <- spatstat.explore::envelope(ppp_pa, Fest, correction="border", nsim=199)
-K_env <- spatstat.explore::envelope(ppp_pa, Kest, correction="iso", nsim=199, global=TRUE)
-L_env <- spatstat.explore::envelope(ppp_pa, Lest, correction="iso", nsim=199, global=TRUE)
+G_env <- spatstat.explore::envelope(ppp_pa, Gest, correction="border", nsim=99)
+F_env <- spatstat.explore::envelope(ppp_pa, Fest, correction="border", nsim=99)
+K_env <- spatstat.explore::envelope(ppp_pa, Kest, correction="iso", nsim=99, global=TRUE)
+L_env <- spatstat.explore::envelope(ppp_pa, Lest, correction="iso", nsim=99, global=TRUE)
+
+dir.create("data/aspatial/kde_rds", recursive = TRUE, showWarnings = FALSE)
+saveRDS(
+  list(
+    meta = list(area = "Downtown Core", sector = "FNB", nsim = 99, seed = 123),
+    G = G_env, F = F_env, K = K_env, L = L_env
+  ),
+  file = "data/aspatial/kde_rds/envelope_FNB_DowntownCore_n99.rds"
+)
+
+par(mfrow=c(2,2))
+plot(G_env, xlim=c(0,0.6), main="G envelope — F&B Downtown Core")
+plot(F_env, xlim=c(0,0.6), main="F envelope — F&B Downtown Core")
+plot(K_env, . - theo ~ r, xlab="d (km)", ylab="K(d)-theo", main="K envelope"); abline(h=0,lty=2)
+plot(L_env, . - theo ~ r, xlab="d (km)", ylab="L(d)-theo", main="L envelope"); abline(h=0,lty=2)
+par(mfrow=c(1,1)); dev.off()
+```
+
+```{r}
+#| fig.width: 11
+#| fig.height: 9
+#| dpi: 200
+#| eval: true
+#| cache: false
+
+rds_path <- "data/aspatial/kde_rds/envelope_FNB_DowntownCore_n99.rds"
+stopifnot(file.exists(rds_path))
+env_dc <- readRDS(rds_path)
+
+# (optional) sanity check nsim
+if (!is.null(env_dc$meta$nsim) && env_dc$meta$nsim != 99) {
+  warning(sprintf("RDS was built with nsim=%s (not 99).", env_dc$meta$nsim))
+}
+
+G_env <- env_dc$G; F_env <- env_dc$F; K_env <- env_dc$K; L_env <- env_dc$L
 
 par(mfrow=c(2,2))
 plot(G_env, xlim=c(0,0.6), main="G envelope — F&B Downtown Core")
@@ -1156,13 +1158,7 @@ par(mfrow=c(1,1))
 ```
 
 -   **Random locations are closer to points than under CSR**, indicating **space is well covered by facilities** and supports clustering around accessible areas (transit/town hubs).
-
-<!-- -->
-
 -   **Clustering persists over multiple distances**, not just locally—evidence of **polycentric, multi-scale aggregation**.
-
-<!-- -->
-
 -   **Strong, scale-robust clustering** with **no regular (inhibitory) spacing**. Together, G/F/K/L agree: new firms form **dense cores with secondary clustered nodes**, matching the KDE hotspots.
 
 **Insight (F&B STKDE, Jan–Jun 2025)**\
@@ -1173,6 +1169,7 @@ Across the four centres, hotspots are persistent in **Orchard/River Valley**, wi
 #| fig.heigh: 30
 #| fig.width: 30
 #| warning: false
+#| eval: false
 
 fnb_2025 <- acra_sf_proj %>%
   filter(ssic_2d == "56",
@@ -1201,6 +1198,61 @@ for (pa in areas) {
   }
   par(mfcol = c(1,1))
 }
+
+```
+
+```{r}
+# define only if missing
+if (!exists("save_png_if_missing")) {
+  save_png_if_missing <- function(path, plot_fun, width=11, height=9, res=200) {
+    if (!file.exists(path)) {
+      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+      png(path, width=width, height=height, units="in", res=res)
+      on.exit(dev.off(), add=TRUE)
+      plot_fun()
+    }
+    invisible(path)
+  }
+}
+```
+
+```{r}
+
+bw_edu_pg <- bw.diggle(edu_pg_km)
+bw_edu_tm <- bw.diggle(edu_tm_km)
+bw_edu_ck <- bw.diggle(edu_ck_km)
+bw_edu_jw <- bw.diggle(edu_jw_km)
+
+bw_it_pg <- bw.diggle(it_pg_km)
+bw_it_tm <- bw.diggle(it_tm_km)
+bw_it_ck <- bw.diggle(it_ck_km)
+bw_it_jw <- bw.diggle(it_jw_km)
+
+# EDU 4-panel
+save_png_if_missing(
+  "figs/kde/edu_4panel.png",
+  function() {
+    par(mfrow=c(2,2), mar=c(3.5,3.5,3,5), cex=1.15)
+    plot(density(edu_pg_km, sigma=bw_edu_pg, edge=TRUE), main="Edu — Downtown Core",  ribargs=list(cex.axis=1.2))
+    plot(density(edu_tm_km, sigma=bw_edu_tm, edge=TRUE), main="Edu — Orchard",        ribargs=list(cex.axis=1.2))
+    plot(density(edu_ck_km, sigma=bw_edu_ck, edge=TRUE), main="Edu — Jurong East",    ribargs=list(cex.axis=1.2))
+    plot(density(edu_jw_km, sigma=bw_edu_jw, edge=TRUE), main="Edu — Tampines",       ribargs=list(cex.axis=1.2))
+    par(mfrow=c(1,1))
+  }
+)
+
+# IT 4-panel
+save_png_if_missing(
+  "figs/kde/it_4panel.png",
+  function() {
+    par(mfrow=c(2,2), mar=c(3.5,3.5,3,5))
+    plot(density(it_pg_km, sigma=bw_it_pg, edge=TRUE, kernel="gaussian"), main="IT — Downtown Core")
+    plot(density(it_tm_km, sigma=bw_it_tm, edge=TRUE, kernel="gaussian"), main="IT — Orchard")
+    plot(density(it_ck_km, sigma=bw_it_ck, edge=TRUE, kernel="gaussian"), main="IT — Jurong East")
+    plot(density(it_jw_km, sigma=bw_it_jw, edge=TRUE, kernel="gaussian"), main="IT — Tampines")
+    par(mfrow=c(1,1))
+  }
+)
 
 ```
 
