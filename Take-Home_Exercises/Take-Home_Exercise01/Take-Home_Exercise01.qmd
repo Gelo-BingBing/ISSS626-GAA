@@ -10,26 +10,18 @@ execute:
   freeze: true
 ---
 
-# 1. Overview
+## 1. Overview
 
 This exercise applies spatial point pattern analysis methods to study the distribution of newly registered corporate entities in Singapore. Following the Data Analytics Lifecycle and based on the hands-on practices, the analysis covers data preparation, industry classification, geocoding, and geovisualisation.
 
-# 2. **Installing and Launching the R Packages**
+## 2. **Installing and Launching the R Packages**
 
 ```{r}
 pacman::p_load(tidyverse, readr, lubridate,sf,tmap, rvest,httr, jsonlite, dplyr, purrr,spatstat,terra,spatstat.explore,stars,spatstat.geom,rlang)
 
 ```
 
-## 2.1 **Reproducibilty**
-
-For reproducible results of this exercise, we will use seed value, `1234`.
-
-```{r}
-set.seed(1234)
-```
-
-# 3. Data Import & Preparation
+## 3. Data Import & Preparation
 
 The following 3 datasets will be used in this exercise.
 
@@ -48,7 +40,7 @@ acra_files <- list.files("data/aspatial/ACRA",
 ```
 
 ```{r}
-
+#｜eval: false
 acra_raw <- map_dfr(acra_files, read_csv)
 ```
 
@@ -138,11 +130,11 @@ acra_sf_proj <- st_transform(acra_sf, 3414)
 mp19_subzone_proj <- st_transform(mp19_subzone, 3414)
 ```
 
-# 4.Geospatial Data wrangling
+## 4.Geospatial Data wrangling
 
 spatstat relies on its own specific data structures like ppp (planar point pattern) for point data and owin for observation windows
 
-## 4.1 Converting sf data frames to ppp class
+### 4.1 Converting sf data frames to ppp class
 
 spatstat requires the point event data in ppp object form. The code chunk below uses \[as.ppp()\] of spatstat package to convert childcare_sf to ppp format.
 
@@ -370,7 +362,7 @@ ce_edu
 
 **Kernel Density Estimation (KDE)** is a valuable tool for visualising and analyzing first-order spatial point patterns. It is widely considered a method within **Exploratory Spatial Data Analysis (ESDA).** We will use Kernel Density Estimation (KDE) is applied to visualize the spatial intensity of newly registered businesses. It helps us **identify hotspots, highlight areas with high clustering**, and provides a clearer picture of the spatial distribution pattern beyond point maps.
 
-**5.1 Working with automatic bandwidth selection method**
+### **5.1 Working with automatic bandwidth selection method**
 
 Bandwidth selectors：
 
@@ -470,7 +462,7 @@ plot(kde_SG_edu)
 summary(kde_SG_edu)
 ```
 
-**5.2 Rescalling KDE values**
+### **5.2 Rescalling KDE values**
 
 In the code chunk below, *rescale.ppp()* is used to covert the unit of measurement from meter to kilometer.
 
@@ -530,7 +522,7 @@ plot(sg_owin, add = TRUE)
 
 Notice that output image looks identical to the earlier version, the only changes in the data values (refer to the legend).
 
-**5.3 Working with different automatic badwidth methods**
+### **5.3 Working with different automatic badwidth methods**
 
 Beside *bw.diggle()*, there are three other **spatstat** functions can be used to determine the bandwidth, they are: *bw.CvL()*, *bw.scott()*, and *bw.ppl()*.
 
@@ -641,6 +633,8 @@ plot(density(ppp_edu_km, sigma=0.1157807, edge=TRUE, kernel="disc"),
 
 ```
 
+Across all three sectors, KDE reveals a stable **polycentric** pattern: the CBD–Orchard/River Valley spine, **Jurong East**, and **Tampines** persist as the highest-intensity hotspots. **IT Services** is the most tightly clustered, peaking in the Downtown Core and adjacent innovation corridors, reflecting proximity to clients and talent. **F&B** is more diffuse but concentrates along retail/nightlife belts (Orchard) and transit-anchored regional centres (Jurong East, Tampines). **Education** shows moderate clustering that aligns with dense residential towns and a central tutoring belt. Bandwidth checks (e.g., *bw.diggle* vs *bw.ppl*) alter smoothness, not hotspot locations—so peaks are **robust**. These first-order results anticipate
+
 ## **6 Fixed and Adaptive KDE**
 
 ### **6.1 Computing KDE by using fixed bandwidth**
@@ -658,6 +652,8 @@ plot(kde_fnb_fb, main = "KDE (Fixed 600 m) – F&B")
 
 ```
 
+New F&B entities cluster along the **CBD–Orchard–Chinatown** strip, extending east–west toward **Tampines** and **Jurong East**. Peripheral activity is sparse. The fixed bandwidth highlights a **broad core** shaped by commuter flows and tourism, while secondary intensity at regional hubs reflects mall-based demand and interchange footfall. The macro surface suggests F&B expansion remains **transit- and destination-oriented**, favouring large, mixed-use centres over dispersed neighbourhood sites.
+
 ```{r}
 #| fig.height: 6
 #| fig.width: 6
@@ -667,6 +663,8 @@ kde_it_fb  <- density.ppp(ppp_it_km,  sigma = 0.6, edge = TRUE, kernel = "gaussi
 plot(kde_it_fb, main = "KDE (Fixed 600 m) – it")
 ```
 
+New IT firms concentrate along the **CBD–Orchard–one-north** axis, reflecting proximity to Grade-A offices, venture services and universities. **Secondary intensity** appears at **Jurong East** and **Tampines**, consistent with regional business-hub functions and good MRT connectivity. North and far-west display sparse activity. The large, smooth kernel reveals a **strong core–periphery gradient** rather than scattered outposts, implying agglomeration benefits still dominate early-stage location choice. Compared with Education, IT shows a **tighter inner-core** and fewer peripheral pockets, consistent with knowledge-worker clustering and client proximity.
+
 ```{r}
 #| fig.height: 6
 #| fig.width: 6
@@ -674,6 +672,10 @@ plot(kde_it_fb, main = "KDE (Fixed 600 m) – it")
 kde_edu_fb <- density.ppp(ppp_edu_km, sigma = 0.6, edge = TRUE, kernel = "gaussian")
 plot(kde_edu_fb, main = "KDE (Fixed 600 m) – Education")
 ```
+
+Education-related entities show **central-east hotspots** near dense residential estates and schools, plus signals around **Jurong East** and **Tampines**. The surface is **more diffuse** than IT, implying catchment-driven siting near learners rather than CBD client access. The fixed bandwidth emphasizes broad demand corridors connecting central estates to regional centres. Peripheral towns register **low but present** activity, suggesting incremental growth where population density and schools overlap.
+
+### 
 
 ### **6.2 Computing KDE by using adaptive bandwidth**
 
@@ -689,6 +691,8 @@ plot(kde_fnb_fb, main = "kde_fnb_ab")
 
 ```
 
+Adaptive KDE sharpens **street-level cores** in the **CBD/Orchard/Chinatown** strip and reveals **compact neighbourhood centres** at **Jurong East** and **Tampines**. Smaller peaks align with MRT interchanges and mall clusters, indicating **transit-oriented footfall** as a strong predictor. Compared to fixed bandwidth, adaptive smoothing uncovers **micro-hotspots** that were previously blended into the urban core, useful for site selection and storefront competition mapping.
+
 ```{r}
 #| fig.height: 6
 #| fig.width: 6
@@ -700,6 +704,8 @@ plot(kde_it_ab, main = "kde_it_ab")
 
 ```
 
+Adaptive KDE isolates **tight innovation nodes**—notably **one-north** and the **CBD**—and highlights **airport-fringe/Changi Business Park** linkages via the east corridor. Suburban peaks at **Jurong East** and **Tampines** are visible but smaller, signalling **selective decentralisation** of support and back-office functions. The pattern suggests an ecosystem structure: R&D/venture in one-north, client/finance in the CBD, and operations in regional centres.
+
 ```{r}
 #| fig.height: 6
 #| fig.width: 6
@@ -709,6 +715,8 @@ kde_edu_ab <- adaptive.density(ppp_edu_km, method="kernel")
 plot(kde_edu_ab, main = "kde_edu_ab")
 
 ```
+
+Education pockets appear as **small, localized clusters** embedded in residential towns, with compact peaks near **Tampines** and **Jurong East** and scattered central-east nodes. Adaptive smoothing shows a **fine-grained, catchment-based** structure: multiple modest centres rather than a single dominant core. This supports a **distributed service** model aligned with school density and family housing.
 
 Let's take a look the difference:
 
@@ -827,7 +835,17 @@ tm_shape(kde_edu_terra) +
 
 ```
 
-## 
+-   **KDE – F&B**\
+
+    F&B shows a core–periphery gradient: the **CBD–Orchard–Chinatown** belt is strongest, extending toward **Jurong East** and **Tampines**. Hotspots align with **MRT interchanges** and malls; outer areas are sparse. *Planning:* tighten streetscape/queue/outdoor-dining management at hubs; enable curated frontage supply in the two regional centres to absorb demand.
+
+-   **KDE – IT Services**\
+
+    IT concentrates in the **CBD** and **one-north**, with **Jurong East** and **Tampines** as secondary nodes and a weak east corridor toward **Changi Business Park**—a classic **agglomeration** pattern. *Planning:* safeguard mixed-use, fibre-ready space in the core; provide flexible, subdivisible offices in regional centres to support selective decentralisation.
+
+-   **KDE – Education**\
+
+    Education forms **distributed neighbourhood pockets**, stronger in the central–east, with secondary peaks at **Jurong East** and **Tampines**, overlapping school and housing catchments. *Planning:* permit small classrooms/shared facilities around these pockets, co-located with transit and community spaces, while avoiding over-concentration in any single town.
 
 ## 8. **First Order SPPA**
 
@@ -875,14 +893,11 @@ mpsz_sf <- mpsz_sf %>%
 ```
 
 ```{r}
-write_rds(mpsz_sf, 
-          "data/mpsz_cl.rds")
-```
-
-```{r}
 mpsz_sf <- readr::read_rds("data/mpsz_cl.rds")  
 stopifnot(sf::st_crs(mpsz_sf)$epsg == 3414)     
 
+write_rds(mpsz_sf, 
+          "data/mpsz_cl.rds")
 ```
 
 The code chunk below will be used to extract the target planning areas.
@@ -994,6 +1009,18 @@ par(mfrow=c(1,1))
 
 ```
 
+-   **F&B (4 area)**\
+
+    Transit/mall-anchored: Downtown Core densest; Orchard along retail spine; Jurong East & Tampines ring MRT hubs; off-corridor sparse.
+
+-   **IT Services (4 area)**\
+
+    CBD (Grade-A offices) tight; Orchard sparse. Jurong East & Tampines show secondary pockets—agglomeration with mild decentralisation.
+
+-   **Education (4 area)**\
+
+    Neighbourhood pockets: strongest at Jurong East & Tampines; small clusters in Downtown/Orchard; align with MRT and school-housing catchments.
+
 ### 8.1.2 **Clark and Evans Test**
 
 ```{r}
@@ -1081,6 +1108,8 @@ par(mfrow=c(1,1))
 
 ```
 
+Neighbourhood-led, transit-adjacent pattern. **Downtown Core** shows low, scattered intensity—adult/enrichment near MRT, limited residential catchment. **Orchard** forms a light linear band along the retail spine. **Jurong East** shows broader mid-level spread around the interchange and residential edges. **Tampines** is the clearest hotspot: compact, high intensity centered on the Town Centre/MRT, matching school and family-housing catchments. **Planning:** prioritise small classrooms/shared facilities near **Jurong East** and **Tampines** nodes; co-locate with community spaces and transit; keep limited, accessible central offerings for after-work learners while avoiding over-concentration in any single town.
+
 ## 9.  **2 nd Order Spatial Point Patterns Analysis Methods**
 
 ```{r}
@@ -1105,21 +1134,28 @@ w_tm <- spatstat.geom::as.owin(pa_tm)
 Arccording the task of caculative the function is big,so we select one to clarify:
 
 ```{r}
+
+out_dir <- "Take-Home_Exercise01/data/aspatial" 
 ex_file <- file.path(out_dir, "FNB_56__Downtown_Core.rds")
-  plot(obj$envelopes$G, main = "G envelope")
 ```
 
 ```{r}
  plot(obj$envelopes$F, main = "F envelope")
 ```
 
+-   **Random locations are closer to points than under CSR**, indicating **space is well covered by facilities** and supports clustering around accessible areas (transit/town hubs).
+
 ```{r}
 plot(obj$envelopes$K, . - r ~ r, xlab="d (m)", ylab="K(d)-r", main="K envelope"); abline(h=0, lty=2)
 ```
 
+-   **Clustering persists over multiple distances**, not just locally—evidence of **polycentric, multi-scale aggregation**.
+
 ```{r}
 plot(obj$envelopes$L, . - r ~ r, xlab="d (m)", ylab="L(r)-r", main="L envelope"); abline(h=0, lty=2)
 ```
+
+-   **Strong, scale-robust clustering** with **no regular (inhibitory) spacing**. Together, G/F/K/L agree: new firms form **dense cores with secondary clustered nodes**, matching the KDE hotspots.
 
 ```{r}
 stkde_fnb <- readRDS("data/aspatial/kde_rds/STKDE_FNB_2025H1.rds")
