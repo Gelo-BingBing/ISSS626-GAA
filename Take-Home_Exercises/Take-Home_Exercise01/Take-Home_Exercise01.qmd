@@ -437,7 +437,6 @@ Fixed bandwidth method is very sensitive to highly skew distribution of spatial 
 #| fig.height: 6
 #| fig.width: 6
 
-
 kde_fnb_ab <- adaptive.density(ppp_fnb_km, method="kernel")
 plot(kde_fnb_fb, main = "kde_fnb_ab")
 
@@ -782,75 +781,62 @@ par(mfrow=c(1,1))
 Across the four centres, hotspots are persistent in **Orchard/River Valley**, with the strongest and most compact intensities every month. The **Downtown Core** remains active but more diffuse—consistent with office-driven F&B that scatters along the CBD fringe. **Jurong East** shows the clearest month-on-month build-up, with intensity rising from Feb and peaking by **May–June**, signalling accelerating openings around the interchange/retail cluster. **Tampines** stays low–moderate for most months, with a visible uptick in **June**. Overall, the temporal profile points to a mid-year ramp (Q2) rather than a January surge, while the spatial pattern confirms a **polycentric** structure anchored by Orchard and the CBD, and strengthening secondary growth in Jurong East.
 
 ```{r}
-#| fig.heigh: 30
-#| fig.width: 30
-#| warning: false
-
-fnb_2025 <- acra_sf_proj %>%
+# 2025-01-01 ~ 2025-06-30 的 F&B（SSIC 56）
+fnb_2025H1_sf <- acra_sf_proj %>%
   filter(ssic_2d == "56",
-         reg_date >= as.Date("2025-01-01"),
-         reg_date <= as.Date("2025-06-30")) %>%
-  mutate(month_num = month(reg_date))
-fnb_ppp <- spatstat.geom::as.ppp(fnb_2025 %>% select(month_num))
-get_win <- function(pa) {
-  mpsz_sf %>% filter(PLN_AREA_N == pa) %>%
-    st_union() %>% spatstat.geom::as.owin()
-}
+         as.Date(reg_date) >= as.Date("2025-01-01"),
+         as.Date(reg_date) <= as.Date("2025-06-30"))
 
-areas <- c("DOWNTOWN CORE","ORCHARD","JURONG EAST","TAMPINES")
-for (pa in areas) {
-  win <- get_win(pa)
-  fnb_pa <- fnb_ppp[win]                                  
-  stkde <- sparr::spattemp.density(fnb_pa)                
-  out <- paste0("data/aspatial/kde_rds/STKDE_FNB_",
-                gsub(" ","",pa), "_2025H1.rds")
-  saveRDS(stkde, out)
-  par(mfcol = c(2,3), mar = c(2,2,2,2))
-  for (i in 1:6) {
-    plot(stkde, i, override.par=FALSE, fix.range=TRUE,
-         main = paste0("F&B STKDE — ", pa, " (", sprintf("2025-%02d", i), ")"))
-    plot(win, add = TRUE)
+fnb_2025H1_ppp <- spatstat.geom::as.ppp(fnb_2025H1_sf)
+fnb_pg_2025_ppp <- fnb_2025H1_ppp[pg_owin]
+fnb_tm_2025_ppp <- fnb_2025H1_ppp[tm_owin]
+fnb_ck_2025_ppp <- fnb_2025H1_ppp[ck_owin]
+fnb_jw_2025_ppp <- fnb_2025H1_ppp[jw_owin]
+
+fnb_pg_2025_km <- spatstat.geom::rescale.ppp(fnb_pg_2025_ppp, 1000, "km")
+fnb_tm_2025_km <- spatstat.geom::rescale.ppp(fnb_tm_2025_ppp, 1000, "km")
+fnb_ck_2025_km <- spatstat.geom::rescale.ppp(fnb_ck_2025_ppp, 1000, "km")
+fnb_jw_2025_km <- spatstat.geom::rescale.ppp(fnb_jw_2025_ppp, 1000, "km")
+
+make_poly <- function(ppp_obj){
+  if (ppp_obj$window$type != "polygonal") {
+    ppp_obj$window <- spatstat.geom::as.polygonal(ppp_obj$window)
   }
-  par(mfcol = c(1,1))
+  ppp_obj
 }
+fnb_pg_2025_km <- make_poly(fnb_pg_2025_km)
+fnb_tm_2025_km <- make_poly(fnb_tm_2025_km)
+fnb_ck_2025_km <- make_poly(fnb_ck_2025_km)
+fnb_jw_2025_km <- make_poly(fnb_jw_2025_km)
 
-```
-
-```{r}
-# define only if missing
-if (!exists("save_png_if_missing")) {
-  save_png_if_missing <- function(path, plot_fun, width=11, height=9, res=200) {
-    if (!file.exists(path)) {
-      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
-      png(path, width=width, height=height, units="in", res=res)
-      on.exit(dev.off(), add=TRUE)
-      plot_fun()
-    }
-    invisible(path)
+# 4-panel KDE
+save_png_if_missing <- function(path, expr_fun){
+  if (!dir.exists(dirname(path))) dir.create(dirname(path), TRUE, TRUE)
+  if (!file.exists(path)) {
+    png(path, width=2000, height=2000, res=200)
+    on.exit(dev.off(), add=TRUE)
+    expr_fun()
   }
 }
-```
 
-```{r}
-bw_fnb_pg <- bw.diggle(fnb_pg_km)
-bw_fnb_tm <- bw.diggle(fnb_tm_km)
-bw_fnb_ck <- bw.diggle(fnb_ck_km)
-bw_fnb_jw <- bw.diggle(fnb_jw_km)
-
-
-# fnb 4-panel
 save_png_if_missing(
-  "figs/kde/fnb_4panel.png",
+  "figs/kde/fnb_2025H1_4panel.png",
   function() {
     par(mfrow=c(2,2), mar=c(3.5,3.5,3,5), cex=1.15)
-    plot(density(fnb_pg_km, sigma=bw_fnb_pg, edge=TRUE), main="fnb — Downtown Core",  ribargs=list(cex.axis=1.2))
-    plot(density(fnb_tm_km, sigma=bw_fnb_tm, edge=TRUE), main="fnb — Orchard",        ribargs=list(cex.axis=1.2))
-    plot(density(fnb_ck_km, sigma=bw_fnb_ck, edge=TRUE), main="fnb — Jurong East",    ribargs=list(cex.axis=1.2))
-    plot(density(fnb_jw_km, sigma=bw_fnb_jw, edge=TRUE), main="fnb — Tampines",       ribargs=list(cex.axis=1.2))
-    par(mfrow=c(1,1))
+    plot(density(fnb_pg_2025_km, sigma=bw.diggle(fnb_pg_2025_km), edge=TRUE),
+         main="F&B — Downtown Core (Jan–Jun 2025)", ribargs=list(cex.axis=1.2))
+    plot(density(fnb_tm_2025_km, sigma=bw.diggle(fnb_tm_2025_km), edge=TRUE),
+         main="F&B — Orchard (Jan–Jun 2025)",        ribargs=list(cex.axis=1.2))
+    plot(density(fnb_ck_2025_km, sigma=bw.diggle(fnb_ck_2025_km), edge=TRUE),
+         main="F&B — Jurong East (Jan–Jun 2025)",    ribargs=list(cex.axis=1.2))
+    plot(density(fnb_jw_2025_km, sigma=bw.diggle(fnb_jw_2025_km), edge=TRUE),
+         main="F&B — Tampines (Jan–Jun 2025)",       ribargs=list(cex.axis=1.2))
   }
 )
+
 ```
+
+
 
 **F&B STKDE (Jan–Jun 2025) — key insights**
 
