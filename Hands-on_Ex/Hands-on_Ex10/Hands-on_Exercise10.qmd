@@ -187,6 +187,10 @@ To compute local Moran’s I, the [`local_moran()`](https://sfdep.josiahparry.c
 The code chunks below are used to compute local Moran’s I of *GDPPC2012* at the county level.
 
 ```{r}
+set.seed(1234)
+```
+
+```{r}
 lisa <- wm_q %>% 
   mutate(local_moran = local_moran(
     GDPPC, nb, wt, nsim = 99),
