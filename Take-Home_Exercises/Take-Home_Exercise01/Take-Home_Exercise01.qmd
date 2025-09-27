@@ -276,13 +276,7 @@ ce_fnb
 ```
 
 -   The significant R \< 1 indicates strong clustering. F&B businesses tend to group around popular dining districts and residential catchments, reflecting demand-driven location strategies.
-
-<!-- -->
-
 -   The lowest R among the three industries, suggesting the strongest clustering. This likely reflects concentration in CBDs and business parks where digital and consultancy firms prefer proximity to clients and talent.
-
-<!-- -->
-
 -   Also shows clear clustering, though slightly weaker than IT. This may align with population density, as educational services are concentrated in residential towns and central areas.
 
 ## **5. Kernel Density Estimation Method**
@@ -437,11 +431,11 @@ plot(kde_fnb_fb, main = "KDE (Fixed 600 m) – F&B")
 
 ```
 
-New F&B entities cluster along the **CBD–Orchard–Chinatown** strip, extending east–west toward **Tampines** and **Jurong East**. Peripheral activity is sparse. The fixed bandwidth highlights a **broad core** shaped by commuter flows and tourism, while secondary intensity at regional hubs reflects mall-based demand and interchange footfall. The macro surface suggests F&B expansion remains **transit- and destination-oriented**, favouring large, mixed-use centres over dispersed neighbourhood sites.
+New **F&B** entities cluster along the **CBD–Orchard–Chinatown** strip, extending east–west toward **Tampines** and **Jurong East**. Peripheral activity is sparse. The fixed bandwidth highlights a **broad core** shaped by commuter flows and tourism, while secondary intensity at regional hubs reflects mall-based demand and interchange footfall. The macro surface suggests F&B expansion remains **transit- and destination-oriented**, favouring large, mixed-use centres over dispersed neighbourhood sites.
 
-New IT firms concentrate along the **CBD–Orchard–one-north** axis, reflecting proximity to Grade-A offices, venture services and universities. **Secondary intensity** appears at **Jurong East** and **Tampines**, consistent with regional business-hub functions and good MRT connectivity. North and far-west display sparse activity. The large, smooth kernel reveals a **strong core–periphery gradient** rather than scattered outposts, implying agglomeration benefits still dominate early-stage location choice. Compared with Education, IT shows a **tighter inner-core** and fewer peripheral pockets, consistent with knowledge-worker clustering and client proximity.
+New **IT** firms concentrate along the **CBD–Orchard–one-north** axis, reflecting proximity to Grade-A offices, venture services and universities. **Secondary intensity** appears at **Jurong East** and **Tampines**, consistent with regional business-hub functions and good MRT connectivity. North and far-west display sparse activity. The large, smooth kernel reveals a **strong core–periphery gradient** rather than scattered outposts, implying agglomeration benefits still dominate early-stage location choice. Compared with Education, IT shows a **tighter inner-core** and fewer peripheral pockets, consistent with knowledge-worker clustering and client proximity.
 
-Education-related entities show **central-east hotspots** near dense residential estates and schools, plus signals around **Jurong East** and **Tampines**. The surface is **more diffuse** than IT, implying catchment-driven siting near learners rather than CBD client access. The fixed bandwidth emphasizes broad demand corridors connecting central estates to regional centres. Peripheral towns register **low but present** activity, suggesting incremental growth where population density and schools overlap.
+**Education**-related entities show **central-east hotspots** near dense residential estates and schools, plus signals around **Jurong East** and **Tampines**. The surface is **more diffuse** than IT, implying catchment-driven siting near learners rather than CBD client access. The fixed bandwidth emphasizes broad demand corridors connecting central estates to regional centres. Peripheral towns register **low but present** activity, suggesting incremental growth where population density and schools overlap.
 
 ### 
 
@@ -459,8 +453,6 @@ plot(kde_fnb_fb, main = "kde_fnb_ab")
 ```
 
 Adaptive KDE sharpens **street-level cores** in the **CBD/Orchard/Chinatown** strip and reveals **compact neighbourhood centres** at **Jurong East** and **Tampines**. Smaller peaks align with MRT interchanges and mall clusters, indicating **transit-oriented footfall** as a strong predictor. Compared to fixed bandwidth, adaptive smoothing uncovers **micro-hotspots** that were previously blended into the urban core, useful for site selection and storefront competition mapping.
-
-Adaptive KDE isolates **tight innovation nodes**—notably **one-north** and the **CBD**—and highlights **airport-fringe/Changi Business Park** linkages via the east corridor. Suburban peaks at **Jurong East** and **Tampines** are visible but smaller, signalling **selective decentralisation** of support and back-office functions. The pattern suggests an ecosystem structure: R&D/venture in one-north, client/finance in the CBD, and operations in regional centres.
 
 Education pockets appear as **small, localized clusters** embedded in residential towns, with compact peaks near **Tampines** and **Jurong East** and scattered central-east nodes. Adaptive smoothing shows a **fine-grained, catchment-based** structure: multiple modest centres rather than a single dominant core. This supports a **distributed service** model aligned with school density and family housing.
 
