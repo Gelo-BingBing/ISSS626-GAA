@@ -1,0 +1,13 @@
+---
+title: "In-class_Ex05"
+---
+
+## 5.1 Getting Started
+
+Installing and loading the R Packages
+
+```{r}
+pacman::p_load(sf, sfdep, tmap, tidyverse)
+```
+
+## 5.3 The Data 
