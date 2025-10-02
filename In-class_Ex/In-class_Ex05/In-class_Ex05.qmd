@@ -1,5 +1,5 @@
 ---
-title: "In-class_Ex05"
+title: "In-class_Ex05-"
 ---
 
 ## 5.1 Getting Started
@@ -7,7 +7,7 @@ title: "In-class_Ex05"
 Installing and loading the R Packages
 
 ```{r}
-pacman::p_load(sf, sfdep, tmap, tidyverse)
+pacman::p_load(sf, sfdep, tmap, tidyverse,plotly,Kendall)
 ```
 
 ## 5.2 **Import csv file into r environment**
@@ -22,6 +22,10 @@ hunan <- st_read(dsn = "data/geospatial",
 hunan2012 <- read_csv("data/aspatial/Hunan_2012.csv")
 ```
 
+```{r}
+GDPPC <- read.csv("data/aspatial/Hunan_GDPPC.csv")
+```
+
 ### 5.2.1 Combining both data frame by using left join
 
 ```{r}
@@ -29,35 +33,14 @@ hunan <- left_join(hunan,hunan2012) %>%
   select(1:4, 7, 15)
 ```
 
-## 5.3 Global Measures of Spatial Association
+## 
 
-Step 1: Deriving Queen's contiguity weights: sfdep methods
-
-```{r}
-wm_q <- hunan %>%
-  mutate(nb = st_contiguity(geometry),
-         wt = st_weights(
-           nb, style = "W"),
-         .before = 1) 
-```
-
-## 5.4 Performing Global Moran' I permutation teat
+Creating a Time Series Cube
 
 ```{r}
-set.seed(1234)
+GDPPC_st <- spacetime(GDPPC,hunan,.loc_col = "Country",.time_col = "Year")
 ```
 
 ```{r}
-global_moran_perm(wm_q$GDPPC,
-             wm_q$nb,
-             wm_q$wt,
-             nsim = 99)
-```
-
-```{r}
-lisa <- wm_q %>% 
-  mutate(local_moran = local_moran(
-    GDPPC, nb, wt, nsim = 99),
-         .before = 1) %>%
-  unnest(local_moran)
+is_spacetime_cube(GDPPC_st)
 ```
