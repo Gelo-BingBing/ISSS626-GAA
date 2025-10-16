@@ -1,0 +1,101 @@
+---
+title: "In-class Exercise 6"
+---
+
+```{r}
+pacman::p_load(sf, tmap, tidyverse, rvest,knitr,dplyr)
+```
+
+```{r}
+mpsz <- st_read("data/geospatial/MasterPlan2019SubzoneBoundaryNoSeaKML.kml")
+
+mpsz <- st_zm(mpsz, drop = TRUE, what = "ZM")
+mpsz <- st_make_valid(mpsz)
+mpsz <- st_transform(mpsz, 3414)
+
+st_crs(mpsz)
+```
+
+```{r}
+mpsz_main <- read_rds("data/mpsz_cl.rds")
+st_crs(mpsz_main)
+```
+
+```{r}
+BusStop <- st_read(dsn = "data/LTA_DATAMALL", layer = "BusStop")
+BusStop <- st_transform(BusStop, crs = 3414)
+
+BusStop_in_SG <- st_join(BusStop,mpsz_main,
+                         join = st_within,left = FALSE)
+
+st_crs(BusStop)
+```
+
+```{r}
+odbus <- read.csv("data/LTA_DATAMALL/origin_destination_bus_202508.csv")
+```
+
+```{r}
+tm_shape(mpsz) +
+  tm_polygons() +
+  tm_shape(BusStop) +
+  tm_dots()
+```
+
+```{r}
+Hexagon <- st_make_grid(
+  mpsz,
+  cellsize = 700,         
+  what = "polygons",
+  square = FALSE
+) %>%
+  st_sf() 
+  
+```
+
+```{r}
+Hexagon$n_collisions = 
+  length(st_intersects(Hexagon,BusStop_in_SG))
+```
+
+```{r}
+Hexagon <- filter(Hexagon,n_collisions > 0)
+```
+
+```{r}
+Hexagon$HEX_ID <- sprintf(
+  "H%04d",seq_len(nrow(Hexagon))) %>%
+  as.factor()
+
+Hexagon <- Hexagon %>%
+  select(,-n_collisions)
+
+kable(head(Hexagon))
+```
+
+Preparing Trip Generation Data
+
+Cleaning the data:
+
+```{r}
+trips <- odbus %>%
+  select(c(ORIGIN_PT_CODE,DAY_TYPE,TIME_PER_HOUR,TOTAL_TRIPS)) %>%
+  rename(BUS_STOP_N = ORIGIN_PT_CODE) %>%
+  rename(HOUR_OF_DAY = TIME_PER_HOUR) %>%
+  rename(TRIPS = TOTAL_TRIPS)
+trips$BUS_STOP_N <- as.factor(trips$BUS_STOP_N)
+kable(head(trips))
+```
+
+```{r}
+bs_hex <- st_intersection(
+  BusStop,Hexagon) %>%
+  st_drop_geometry() %>%
+  select(c(BUS_STOP_N),HEX_ID)
+kable(head(bs_hex))
+```
+
+```{r}
+trips <- inner_join(trips,bs_hex)
+kable(head(trips))
+```

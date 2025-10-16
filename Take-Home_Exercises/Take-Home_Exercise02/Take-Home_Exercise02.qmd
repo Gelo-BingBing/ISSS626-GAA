@@ -1,0 +1,189 @@
+---
+title: "Take-Home Exercise 02"
+author: "BingBing"
+date: "2025-10-15"
+format: html
+execute:
+  cache: true
+  freeze: true
+  echo: true
+  warning: false
+  message: false
+---
+
+## Introduction
+
+Buses stitch a city together. Every weekday morning, streams of commuters converge on workplaces and schools. In the evenings and at weekends, however, people disperse to shop, visit friends and family, or relax. Thanks to smartcard ticketing and GPS enabled fleets, we now have detailed records of these everyday movements, showing not only where people travel, but also when these patterns surge, fade or shift across neighborhoods. In practice, however, such rich data are often flattened into static maps or single summary numbers, which can obscure important local differences and conceal changes as they unfold. This study looks beyond the averages. Using bus origin–destination passenger volumes from the LTA DataMall, we address two fundamental yet practical questions:
+
+1.  How do bus mobility patterns differ across neighborhoods?
+
+2.  What emerging patterns are taking shape, that could help planners to anticipate commuting demand and design more responsive services and policies?
+
+The study's aim is to turn raw movement traces into grounded insights and highlight where targeted capacity adjustments could improve everyday journeys, where persistent gaps may require structural solutions and where time-bound surges necessitate flexible interventions. In short, our aim is to provide a clear neighborhood level view of how bus demand actually behaves, and to use emerging models for detecting urban mobility to help planners predict commuting demand and design more responsive public transport services and policies.
+
+## Loading the R package
+
+```{r}
+pacman::p_load(tidyverse, sf, sfdep, tmap, knitr, kableExtra, DT)
+```
+
+## Importing Data
+
+**The Master Plan 2019 Subzone** Boundary dataset was originally defined in a geographic CRS (WGS 84).
+
+It was reprojected to Singapore’s projected CRS (SVY21 / EPSG 3414) to ensure distance and area calculations are expressed in metres rather than degrees.
+
+A pre-cleaned version of the Master Plan 2019 Subzone Boundary (`mpsz_sf.rds`) was used to ensure valid mainland geometries and standardized CRS (EPSG:3414).
+
+```{r}
+mpsz = read_rds("data/mpsz_sf.rds")
+```
+
+**Bus Stop Location:**
+
+```{r}
+BusStop = st_read(dsn = "data/LTADataMall/", 
+                  layer = "BusStop") %>%
+  st_transform(crs = 3414)
+```
+
+**O-D Bus Trips:**
+
+```{r}
+odbus <- read_csv("data/LTADataMall/origin_destination_bus_202508.csv")
+```
+
+## Deriving Analytical Hexagon
+
+### Extracting Bus Stops located within Singapore
+
+In the code chunk below, `st_join()` of sf package is used to select all bus stops located within Singapore main island.
+
+```{r}
+#| label: prep-hex
+#| echo: false
+
+# bus stops within mainland
+busstop_sg <- sf::st_join(BusStop, mpsz, join = sf::st_within, left = FALSE)
+
+# full hex grid (flat-to-flat = 750 m)
+hexagon <- sf::st_make_grid(mpsz, cellsize = 750, what = "polygons", square = FALSE) |>
+  sf::st_sf()
+
+# flag: hex intersects mainland
+hexagon$in_sg <- lengths(sf::st_intersects(hexagon, sf::st_union(mpsz))) > 0
+
+# subset: hex with ≥1 bus stop
+hexagon_has_stop <- hexagon[lengths(sf::st_intersects(hexagon, busstop_sg)) > 0, ]
+
+# dissolved land polygon (single silhouette)
+land_sg <- sf::st_as_sf(sf::st_union(mpsz))
+
+```
+
+-   **Checking the hexagon layer visually**
+
+```{r}
+hex_map_visual <-
+  tmap::tm_shape(hexagon) + tmap::tm_borders(col = "grey70", lwd = 0.25) +
+  tmap::tm_shape(subset(hexagon, in_sg)) + tmap::tm_fill(col = "green", alpha = 1) +
+  tmap::tm_shape(busstop_sg) + tmap::tm_dots(col = "black", size = 0.03) +
+  tmap::tm_layout(
+    bg.color = "white", legend.show = FALSE, frame = TRUE,
+    outer.margins = c(0.02, 0.02, 0.10, 0.02),
+    main.title = "Hexagon layer visual check (green = mainland; red = bus stops)",
+    main.title.position = c("center", "top"), main.title.size = 0.9)
+
+hex_map_visual
+```
+
+-   **Selecting hexagons with bus stops:**
+
+Code chunk eliminates hexagons without bus stop from the initial hexagon layer. It consists of three steps:
+
+1.  a new field called *busstop_count* is created.
+
+2.  `st_intersects()` is used to flag out bus stop located inside a hexagon. Then, `length()` is used to count the number of bus stops located inside a hexagon.
+
+3.  Lastly, `filter()` is used to select hexagons with at least one bus stop found.
+
+```{r}
+map_hex_has_busstop <-
+  tmap::tm_shape(land_sg) +
+  tmap::tm_polygons(fill = "white", col = "black", lwd = 0.6, fill_alpha = 1) +
+  tmap::tm_shape(hexagon_has_stop) +
+  tmap::tm_borders(col = "black", lwd = 0.4) +
+  tmap::tm_shape(busstop_sg) +
+  tmap::tm_dots(fill = "green", col = "green", size = 0.03, fill_alpha = 0.9) +
+  tmap::tm_layout(
+    bg.color = "white", legend.show = FALSE, frame = TRUE,
+    outer.margins = c(0.02, 0.02, 0.10, 0.02),
+    main.title = "Hexagons has bus stops",
+    main.title.position = c("center", "top"), main.title.size = 0.9)
+ 
+map_hex_has_busstop
+
+tm
+```
+
+```{r}
+hexagon <- hexagon %>% dplyr::select(-dplyr::any_of("busstop_count"))
+hexagon$HEX_ID <- sprintf("H%04d", seq_len(nrow(hexagon))) %>% as.factor()
+```
+
+## Preparing Trip Generation Data
+
+-   **Cleaning the data**
+
+```{r}
+trips <- odbus %>%
+  select(c(ORIGIN_PT_CODE, DAY_TYPE, TIME_PER_HOUR, TOTAL_TRIPS)) %>%
+  rename(BUS_STOP_N = ORIGIN_PT_CODE) %>%
+  rename(HOUR_OF_DAY = TIME_PER_HOUR) %>%
+  rename(TRIPS = TOTAL_TRIPS)
+trips$BUS_STOP_N <- as.factor(trips$BUS_STOP_N)
+```
+
+```{r}
+trips
+```
+
+-   **Populating Hexagon IDs into BusStop data frame**
+
+Before we can aggregate trips generate at bus stops onto hexagon level, we need to populate the hexagon ids in hexagon data frame into BusStop data frame.
+
+```{r}
+sf::st_crs(busstop_sg)
+sf::st_crs(hexagon)
+```
+
+```{r}
+bs_hex <- sf::st_join(
+  busstop_sg,                
+  hexagon[, "HEX_ID"],       
+  join = sf::st_within,    
+  left = FALSE) |> sf::st_drop_geometry() |>  dplyr::select(BUS_STOP_N, HEX_ID)
+
+bs_hex
+
+head(bs_hex)
+length(unique(bs_hex$BUS_STOP_N)) == nrow(bs_hex) 
+
+
+```
+
+-   **Adding HEX_ID into bus trips data**
+
+To derive the hourly number of bus trips per hexagon, we need to add *HEX_ID* to trips data. By doing so, we will be able to aswer location questions such as how many bus trip originate from a certain hexagon?
+
+In the code chunk below `inner_join()` is used to join the *trips* data with *bs_hex*.
+
+```{r}
+trips <- inner_join(trips, bs_hex)
+
+trips
+```
+
+```{r}
+
+```
