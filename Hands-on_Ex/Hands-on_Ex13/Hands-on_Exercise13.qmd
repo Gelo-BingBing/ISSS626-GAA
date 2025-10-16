@@ -4,7 +4,6 @@ author: "BingBing"
 date: "2025-10-15"
 format: html
 execute:
-  cache: true
   freeze: true
   echo: true
   warning: false

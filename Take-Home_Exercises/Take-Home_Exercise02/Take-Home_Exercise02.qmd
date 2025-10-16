@@ -122,8 +122,6 @@ map_hex_has_busstop <-
     main.title.position = c("center", "top"), main.title.size = 0.9)
  
 map_hex_has_busstop
-
-tm
 ```
 
 ```{r}
