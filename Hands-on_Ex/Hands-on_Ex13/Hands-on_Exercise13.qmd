@@ -4,11 +4,13 @@ author: "BingBing"
 date: "2025-10-15"
 format: html
 execute:
-  freeze: true
   echo: true
   warning: false
   message: false
+  execute: false
 ---
+
+💡To avoid rendering failure due to excessive running time, only the code and some images are released here for explanation. Other outputs can be run and viewed by yourself.
 
 ## **13.1 Overview**
 
@@ -36,7 +38,7 @@ If you use these packages for the first time, you should go to install first.
 
 -   tidyverse (readr, dplyr, ggplot2): Import, clean, and wrangle tabular data; quick EDA plots.
 
--   tmap: Thematic mapping to visualize prices and local GWR outputs (coefficients, significance) across space.
+-   include: Thematic mapping to visualize prices and local GWR outputs (coefficients, significance) across space.
 
 The code chunks below installs and launches these R packages into R environment.
 
@@ -175,6 +177,8 @@ ggplot(data=condo_resale.sf,
                  fill="light blue")
 ```
 
+![](images/clipboard-223758040.png)
+
 💡 The distribution is relatively less skewed after the transformation. Log transformation is important.
 
 ### **13.7.2 Multiple Histogram Plots distribution of variables**
@@ -267,9 +271,11 @@ ggarrange(AREA_SQM, AGE, PROX_CBD, PROX_CHILDCARE,
           ncol = 3, nrow = 4)
 ```
 
+![](images/clipboard-2337720489.png)
+
 ### **13.7.3 Drawing Statistical Point Map**
 
-Lastly, we want to reveal the geospatial distribution condominium resale prices in Singapore. The map will be prepared by using **tmap** package.
+Lastly, we want to reveal the geospatial distribution condominium resale prices in Singapore. The map will be prepared by using **include** package.
 
 First, we will turn on the interactive mode of tmap by using the code chunk below.
 
@@ -337,6 +343,8 @@ ggplot(data=condo_resale.sf,
   geom_smooth(method = lm)
 ```
 
+![](images/clipboard-1271416286.png)
+
 Figure above reveals that there are a few statistical outliers with relatively high selling prices.
 
 ### **13.8.2 Multiple Linear Regression Method**
@@ -359,7 +367,7 @@ corrplot(cor(condo_resale[, 5:23]),
          type = "upper")
 ```
 
-Matrix reorder is very important for mining the hiden structure and patter in the matrix. There are four methods in corrplot (parameter order), named “AOE”, “FPC”, “hclust”, “alphabet”. In the code chunk above, AOE order is used. It orders the variables by using the *angular order of the eigenvectors* method suggested by [Michael Friendly](https://www.datavis.ca/papers/corrgram.pdf).
+![](images/clipboard-2052270584.png)Matrix reorder is very important for mining the hiden structure and patter in the matrix. There are four methods in corrplot (parameter order), named “AOE”, “FPC”, “hclust”, “alphabet”. In the code chunk above, AOE order is used. It orders the variables by using the *angular order of the eigenvectors* method suggested by [Michael Friendly](https://www.datavis.ca/papers/corrgram.pdf).
 
 From the scatterplot matrix, it is clear that ***Freehold*** is highly correlated to ***LEASE_99YEAR***. In view of this, it is wiser to only include either one of them in the subsequent model building. As a result, ***LEASE_99YEAR*** is excluded in the subsequent model building.
 
@@ -462,13 +470,14 @@ check_collinearity(condo.mlr1)
 #| fig.height: 10
 #| out.width: "100%"
 #| dpi: 300
-
 mlr.vif <- check_collinearity(condo.mlr1)
 
 plot(mlr.vif) +
 theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 10),
 axis.text.y = element_text(size = 10))
 ```
+
+![](images/clipboard-2710814063.png)
 
 Since the VIF of the independent variables are less than 10. We can safely conclude that there are no sign of multicollinearity among the independent variables.
 
@@ -481,10 +490,11 @@ In the code chunk below, the [`ols_plot_resid_fit()`](https://olsrr.rsquaredaca
 ```{r}
 #| fig.width: 12
 #| fig.height: 12
-
 check_model(condo.mlr1,
             check = "linearity")
 ```
+
+![](images/clipboard-2127849263.png)
 
 The figure above reveals that most of the data poitns are scattered around the 0 line, hence we can safely conclude that the relationships between the dependent variable and independent variables are linear.
 
@@ -511,6 +521,8 @@ plot(check_normality(condo.mlr1),
      type = "qq")
 ```
 
+![](images/clipboard-1254911660.png)
+
 Q-Q plot above below shows that majority of the data points are felt along the zero line.
 
 Another way to check for normality assumption visual is by using [`check_model()`](https://easystats.github.io/performance/reference/check_model.html) of performance package as shown in the code chunk below.
@@ -521,6 +533,8 @@ Another way to check for normality assumption visual is by using [`check_model(
 check_model(condo.mlr1,
             check= "normality")
 ```
+
+![](images/clipboard-1237167485.png)
 
 The figure reveals that the residual of the multiple linear regression model (i.e. condo.mlr1) is resemble normal distribution.
 
