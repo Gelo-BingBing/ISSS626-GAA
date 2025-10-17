@@ -5,6 +5,7 @@ date: "2025-10-15"
 format: html
 execute:
   echo: true
+  eval: false
   warning: false
   message: false
   execute: false
