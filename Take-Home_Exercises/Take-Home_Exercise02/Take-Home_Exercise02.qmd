@@ -42,7 +42,7 @@ mpsz = read_rds("data/mpsz_sf.rds")
 **Bus Stop Location:**
 
 ```{r}
-BusStop = st_read(dsn = "data/LTADataMall/", 
+BusStop = st_read(dsn = "data/geospatial/LTADataMall/", 
                   layer = "BusStop") %>%
   st_transform(crs = 3414)
 ```
@@ -50,7 +50,7 @@ BusStop = st_read(dsn = "data/LTADataMall/",
 **O-D Bus Trips:**
 
 ```{r}
-odbus <- read_csv("data/LTADataMall/origin_destination_bus_202508.csv")
+odbus <- read_csv("data/geospatial/LTADataMall/origin_destination_bus_202508.csv")
 ```
 
 ## Deriving Analytical Hexagon
@@ -166,8 +166,6 @@ bs_hex
 
 head(bs_hex)
 length(unique(bs_hex$BUS_STOP_N)) == nrow(bs_hex) 
-
-
 ```
 
 -   **Adding HEX_ID into bus trips data**

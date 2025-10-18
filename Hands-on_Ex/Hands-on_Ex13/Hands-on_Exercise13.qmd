@@ -668,7 +668,9 @@ bw.fixed <- bw.gwr(
   longlat=FALSE)
 ```
 
-The result shows that the recommended bandwidth is 971.3405 metres. (Quiz: Do you know why it is in metre?)
+The result shows that the recommended bandwidth is 971.3405 metres. Quiz: Do you know why it is in metre?
+
+For a **fixed** bandwidth, GWmodel’s distance is in the **same unit as the coordinates**, so the optimal bandwidth is reported in **metres**.
 
 #### 13.9.1.2 GWModel method - fixed bandwith
 
