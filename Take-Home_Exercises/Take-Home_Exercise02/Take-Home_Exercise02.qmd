@@ -6,6 +6,7 @@ format: html
 execute:
   warning: false
   message: false
+  freeze: true
 ---
 
 ## 1. Introduction
