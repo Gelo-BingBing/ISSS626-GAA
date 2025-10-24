@@ -140,7 +140,6 @@ test_data <- read_rds("data/model/test_data.rds")
 ## **14.7 Building a non-spatial multiple linear regression**
 
 ```{r}
-#| eval: false
 price_mlr <- lm(resale_price ~ floor_area_sqm +
                   storey_order + remaining_lease_mths +
                   PROX_CBD + PROX_ELDERLYCARE + PROX_HAWKER +
@@ -152,9 +151,8 @@ price_mlr <- lm(resale_price ~ floor_area_sqm +
 summary(price_mlr)
 ```
 
-![](images/clipboard-3062600149.png){fig-align="center" width="527"}
-
 ```{r}
+#| eval: false
 write_rds(price_mlr, "data/model/price_mlr.rds" ) 
 ```
 
