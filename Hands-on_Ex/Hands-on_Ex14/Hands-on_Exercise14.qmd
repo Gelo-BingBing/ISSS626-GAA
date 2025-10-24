@@ -1,5 +1,12 @@
 ---
 title: "Geographically Weighted Predictive Models"
+author: "BingBing"
+date: "2025-10-23"
+format: html
+execute:
+  warning: false
+  message: false
+  freeze: true
 ---
 
 ## **14.1 Overview**
