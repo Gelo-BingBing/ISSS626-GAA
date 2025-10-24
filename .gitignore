@@ -10,3 +10,4 @@ site_libs/
 .quarto
 /.quarto/
 data/
+*_cache/
