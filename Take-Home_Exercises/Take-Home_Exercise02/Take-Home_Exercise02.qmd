@@ -1362,13 +1362,15 @@ cat("Locations:", n_distinct(trips_morning_complete$location), "\n")
 ```
 
 ```{r}
-#| warning: false
 set.seed(1234)
-ehsa_morning <- emerging_hotspot_analysis(
-  x = trips_morning_st,
-  .var = "value",
-  k = 1,          
-  nsim = 99)
+ehsa_morning <- suppressWarnings(
+  emerging_hotspot_analysis(
+    x = trips_morning_st,
+    .var = "value",
+    k = 1,
+    nsim = 99
+  )
+)
 ehsa_morning_sig <- ehsa_morning %>%
   filter(p_value < 0.05)
 
@@ -1420,7 +1422,6 @@ ehsa_map_morning
 -   **Weekday Afternoon**
 
 ```{r}
-#| warning: false
 trips_afternoon_st_data <- trips_hex_agg %>%
   filter(TIME_PERIOD == "Weekday_Afternoon") %>%
   mutate(
@@ -1451,13 +1452,26 @@ trips_afternoon_st <- spacetime(
   .time_col = "time"
 )
 
+```
+
+```{r}
 set.seed(1234)
-ehsa_afternoon <- emerging_hotspot_analysis(
-  x = trips_afternoon_st,
-  .var = "value",
-  k = 1,
-  nsim = 99
+ehsa_afternoon <- suppressWarnings(
+  emerging_hotspot_analysis(
+    x = trips_afternoon_st,
+    .var = "value",
+    k = 1,
+    nsim = 99
+  )
 )
+
+cat("Total significant locations:", 
+    nrow(ehsa_afternoon %>% filter(p_value < 0.05)), "\n")
+cat("Percentage significant:",
+    sprintf("%.1f%%", nrow(ehsa_afternoon %>% filter(p_value < 0.05)) / nrow(ehsa_afternoon) * 100))
+
+print(table(ehsa_afternoon$classification))
+head(ehsa_afternoon, 10)
 ```
 
 ```{r}
@@ -1510,10 +1524,6 @@ ehsa_map_afternoon
 -   **Weekend/Holiday**
 
 ```{r}
-#| message: false
-#| warning: false
-#| results: "hide"
-
 trips_weekend_st_data <- trips_hex_agg %>%
   filter(TIME_PERIOD == "Weekend_Holiday") %>%
   mutate(
@@ -1545,13 +1555,26 @@ trips_weekend_st <- spacetime(
 )
 
 set.seed(1234)
-ehsa_weekend <- emerging_hotspot_analysis(
-  x = trips_weekend_st,
-  .var = "value",
-  k = 1,
-  nsim = 99
+ehsa_weekend <- suppressWarnings(
+  emerging_hotspot_analysis(
+    x = trips_weekend_st,
+    .var = "value",
+    k = 1,
+    nsim = 99
+  )
 )
 
+
+
+cat("\n=== Weekend/Holiday EHSA Results ===\n")
+cat("Total locations:", nrow(ehsa_weekend), "\n")
+cat("Significant locations (p < 0.05):", 
+    sum(ehsa_weekend$p_value < 0.05), "\n")
+cat("Percentage significant:",
+    sprintf("%.1f%%", sum(ehsa_weekend$p_value < 0.05) / nrow(ehsa_weekend) * 100), "\n\n")
+
+print(table(ehsa_weekend$classification))
+head(ehsa_weekend, 10)
 ```
 
 ```{r}
