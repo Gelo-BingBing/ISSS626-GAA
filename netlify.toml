@@ -1,6 +1,12 @@
 [build]
   publish = "_site"
   command = """
+    apt-get update && \
+    apt-get install -y r-base r-base-dev \
+      libudunits2-dev libgdal-dev libgeos-dev libproj-dev \
+      libcurl4-openssl-dev libxml2-dev libssl-dev \
+      libfontconfig1-dev libharfbuzz-dev libfribidi-dev \
+      libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev && \
     Rscript -e 'install.packages(c("pacman","sf","sfdep","tmap","tidyverse","knitr","rmarkdown","plotly","spdep","kableExtra","DT"), repos="https://cloud.r-project.org", Ncpus=2)' && \
     QV=1.5.57 && \
     mkdir -p /opt/buildhome/.qbin && \
