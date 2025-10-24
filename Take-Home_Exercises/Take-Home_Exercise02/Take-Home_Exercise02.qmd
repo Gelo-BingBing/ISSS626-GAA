@@ -1362,6 +1362,7 @@ cat("Locations:", n_distinct(trips_morning_complete$location), "\n")
 ```
 
 ```{r}
+#| eval: false
 set.seed(1234)
 ehsa_morning <- suppressWarnings(
   emerging_hotspot_analysis(
@@ -1378,6 +1379,7 @@ head(ehsa_morning, 10)
 ```
 
 ```{r}
+#| eval: false
 ehsa_morning_patterns <- ehsa_morning %>%
   filter(classification != "no pattern detected")
 hex_ehsa_morning <- hexagon_for_st %>%
@@ -1417,11 +1419,14 @@ tm_shape(hex_ehsa_morning) +
 ehsa_map_morning
 ```
 
+![](images/clipboard-3975994374.png)
+
 **EHSA insight (weekday morning):** Morning demand is **stable rather than emerging**—long **consecutive/persistent coldspot** corridors dominate the west and south-west, while **hotspots** appear as **consecutive/persistent** clusters in the north-east/east and a few central pockets. **New hotspots are sparse**, so the strongest origins are established residential feeders, not newly forming areas.
 
 -   **Weekday Afternoon**
 
 ```{r}
+#| eval: false
 trips_afternoon_st_data <- trips_hex_agg %>%
   filter(TIME_PERIOD == "Weekday_Afternoon") %>%
   mutate(
@@ -1471,7 +1476,7 @@ head(ehsa_afternoon, 10)
 ```
 
 ```{r}
-#| warning: false
+#| eval: false
 ehsa_afternoon_patterns <- ehsa_afternoon %>%
   filter(classification != "no pattern detected")
 
@@ -1515,11 +1520,14 @@ tm_shape(hex_ehsa_afternoon) +
 ehsa_map_afternoon
 ```
 
+![](images/clipboard-2342535183.png)
+
 **EHSA insight (weekday afternoon):** After-work demand is **expanding**, not just stable—there are **new and consecutive hotspots** popping up along the central spine and north-/north-east clusters, while a **broad consecutive/persistent coldspot corridor** holds along the west–south-west coast. Translation: evening origins spread to more hexagons, but the west coastal belt remains consistently weak.
 
 -   **Weekend/Holiday**
 
 ```{r}
+#| eval: false
 trips_weekend_st_data <- trips_hex_agg %>%
   filter(TIME_PERIOD == "Weekend_Holiday") %>%
   mutate(
@@ -1574,7 +1582,7 @@ head(ehsa_weekend, 10)
 ```
 
 ```{r}
-#| warning: false
+#| eval: false
 
 ehsa_weekend_patterns <- ehsa_weekend %>%
   filter(classification != "no pattern detected")
@@ -1618,6 +1626,8 @@ tm_shape(hex_ehsa_weekend) +
 
 ehsa_map_weekend
 ```
+
+![](images/clipboard-3237290388.png)
 
 **EHSA insight (weekend/holiday):** Origins shift from commuter corridors to **destination hubs**—many **consecutive/new hotspots** appear across central, east and southern clusters—while a **persistent coldspot belt** holds along the west–south-west coast. Translation: weekend demand concentrates around leisure/shopping areas; industrial/coastal belts remain consistently weak.
 
