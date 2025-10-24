@@ -1451,10 +1451,6 @@ trips_afternoon_st <- spacetime(
   .loc_col = "location",
   .time_col = "time"
 )
-
-```
-
-```{r}
 set.seed(1234)
 ehsa_afternoon <- suppressWarnings(
   emerging_hotspot_analysis(
