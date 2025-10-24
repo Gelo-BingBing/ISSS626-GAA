@@ -1,21 +1,14 @@
 [build]
-  publish = "_site"
   command = """
-    apt-get update && \
-    apt-get install -y r-base r-base-dev \
-      libudunits2-dev libgdal-dev libgeos-dev libproj-dev \
-      libcurl4-openssl-dev libxml2-dev libssl-dev \
-      libfontconfig1-dev libharfbuzz-dev libfribidi-dev \
-      libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev && \
-    Rscript -e 'install.packages(c("pacman","sf","sfdep","tmap","tidyverse","knitr","rmarkdown","plotly","spdep","kableExtra","DT"), repos="https://cloud.r-project.org", Ncpus=2)' && \
-    QV=1.5.57 && \
-    mkdir -p /opt/buildhome/.qbin && \
-    curl -L -o /opt/buildhome/.qbin/quarto.tgz https://github.com/quarto-dev/quarto-cli/releases/download/v${QV}/quarto-${QV}-linux-amd64.tar.gz && \
-    tar -xzf /opt/buildhome/.qbin/quarto.tgz -C /opt/buildhome/.qbin && \
-    export PATH="/opt/buildhome/.qbin/quarto-${QV}/bin:$PATH" && \
-    quarto --version && \
+    QV=1.5.57 &&
+    mkdir -p /opt/buildhome/.qbin &&
+    curl -L -o /opt/buildhome/.qbin/quarto.tgz https://github.com/quarto-dev/quarto-cli/releases/download/v${QV}/quarto-${QV}-linux-amd64.tar.gz &&
+    tar -xzf /opt/buildhome/.qbin/quarto.tgz -C /opt/buildhome/.qbin &&
+    export PATH="/opt/buildhome/.qbin/quarto-${QV}/bin:$PATH" &&
+    quarto --version &&
     quarto render
   """
+  publish = "_site"
 
 [build.environment]
   QUARTO_VERSION = "1.5.57"
