@@ -455,3 +455,11 @@ ggplot(data = test_data_p,
            y = resale_price)) +
   geom_point()
 ```
+
+-   Excellent performance in lower to mid-price ranges (S\$200K-S\$700K), showing minimal prediction errors
+
+-   Slight degradation at higher price points (\>S\$800K), with increased scatter suggesting the model struggles with premium properties
+
+-   No systematic bias - points distribute symmetrically around the diagonal, indicating balanced predictions without consistent over- or under-valuation
+
+-   Few outliers above S\$1M suggest unique property characteristics not fully captured by spatial and structural predictors
