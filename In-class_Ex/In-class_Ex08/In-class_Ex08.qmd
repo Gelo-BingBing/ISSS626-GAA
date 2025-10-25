@@ -1,0 +1,172 @@
+---
+title: "In class exercise 8"
+---
+
+## Getting Started
+
+## Installing the package loading R packages:
+
+```{r}
+ pacman::p_load(httr,jsonlite,sf,spdep,progress,tmap,tidyverse,knitr,spdep,GWmodel,
+                rsample,SpatialML,Metrics,kableExtra,randomForestExplainer)
+```
+
+## Geocoding HDB resale data
+
+-   basic version:
+
+```{r}
+HDBresale <- read_csv("data/rawdata/HDBresale.csv") %>%
+  filter(flat_type == "4 ROOM") %>%
+  filter(month >= "2025-09" & month < "2025-10")
+```
+
+```{r}
+HDBresale$street_name <- gsub(
+  "ST\\.","SAINT",
+  HDBresale$street_name)
+```
+
+```{r}
+#| eval: false
+geocode <- function(block, streetname){
+  base_url <- "https://www.onemap.gov.sg/api/common/elastic/search"
+  address <- paste(block,streetname,sep =" ")
+  query <- list("searchVal" = address,
+                "returnGeom" = "Y",
+                "getAddrDetails" = "N",
+                "pageNum" ="1")
+  res <- GET(base_url, query =query)
+  restext <- content(res, as="text")
+  
+  output <- fromJSON(restext) %>%
+    as.data.frame %>%
+    select(results.LATITUDE, results.LONGITUDE)
+  
+  return(output)
+}
+```
+
+```{r}
+#| eval: false
+HDBresale$LATITUDE <- 0
+HDBresale$LONGITUDE <- 0
+
+for(i in 1:nrow(HDBresale)){
+  temp_output <- geocode(HDBresale[i, 4], HDBresale[i, 5])
+  
+  HDBresale$LATITUDE[i] <- temp_output$results.LATITUDE
+  HDBresale$LONGITUDE[i] <- temp_output$results.LONGITUDE
+}
+```
+
+-   can use below code save to rds files:
+
+```{r}
+#| eval: false
+saveRDS(HDBresale,    "data/rawdata/HDBresale.rds")
+saveRDS(HDBresale_sf, "data/rawdata/HDBresale_sf.rds")
+```
+
+-   read the rds files:
+
+```{r}
+HDBresale    <- readRDS("data/rawdata/HDBresale.rds")
+HDBresale_sf <- readRDS("data/rawdata/HDBresale_sf.rds")
+```
+
+```{r}
+HDBresale_sf <- HDBresale %>%
+  st_as_sf(
+    coords = c("LONGITUDE","LATITUDE"),
+    crs=4326) %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+preschool = st_read("data/rawdata/PreSchoolsLocation.kml") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+within_350m <- st_is_within_distance(
+  HDBresale_sf,preschool,dist = 350)
+HDBresale_sf <- HDBresale_sf %>%
+  mutate(prischool_350m = map_int(within_350m, length))
+```
+
+### **mdata**
+
+```{r}
+mdata <- read_rds("data/rawdata/mdata.rds")
+```
+
+#### Data sampling
+
+```{r}
+set.seed(1234)
+HDB_sample <- mdata %>%
+  sample_n(1500)
+```
+
+#### Checking of overlapping point
+
+```{r}
+overlapping_points <- HDB_sample %>%
+  mutate(overlap = lengths(st_equals(.,.)) > 1)
+```
+
+#### Saptial jitter
+
+```{r}
+HDB_sample <- HDB_sample %>%
+  st_jitter(amount = 1)
+```
+
+```{r}
+set.seed(1234)
+resale_split <- initial_split(HDB_sample,
+                               prop = 6.67/10,)
+train_data <- training(resale_split)
+text_data <- testing(resale_split)
+```
+
+process of adaptive caculative:
+
+```{r}
+#| eval: false
+bw_adaptive <- bw.gwr(resale_price ~ floor_area_sqm +
+                         storey_order + remaining_lease_mths +
+                         PROX_CBD + PROX_ELDERLYCARE + PROX_HAWKER +
+                         PROX_MRT + PROX_PARK + PROX_MALL +
+                         PROX_SUPERMARKET + WITHIN_350M_KINDERGARTEN +
+                         WITHIN_350M_CHILDCARE + WITHIN_350M_BUS +
+                         WITHIN_1KM_PRISCH, 
+                         data=train_data, 
+                       approach="cv",
+                       kernel="gaussian",
+                       adaptive=TRUE, 
+                       longlat=FALSE)
+```
+
+```{r}
+#| eval: false
+bw_adaptive
+```
+
+```{r}
+#| eval: false
+write_rds(bw_adaptive,"data/model/bw_adaptive.rds")
+```
+
+To save time,we already calculated:
+
+```{r}
+bw_adaptive <- read_rds("data/model/bw_adaptive.rds")
+bw_adaptive
+```
+
+```{r}
+gwr_adaptive <- read_rds("data/model/gwr_adaptive.rds")
+gwr_adaptive
+```
