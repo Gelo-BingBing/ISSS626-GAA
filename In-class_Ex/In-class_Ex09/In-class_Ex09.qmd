@@ -136,7 +136,7 @@ tm_shape(eldercare) +
   tm_layout(main.title = "Accessibility to eldercare: Hansen method",
             main.title.position = "center",
             main.title.size = 2,
-            legend.outside = FALSE,
+            legend.outside =TRUE,
             legend.height = 0.45, 
             legend.width = 3.0,
             legend.format = list(digits = 6),
@@ -153,23 +153,25 @@ Looking at the values in the legend across the five maps, we can see that as pow
 
 -   **Power=0.5**
 
-![](images/clipboard-3668175277.png)
+![](images/clipboard-1199052437.png)
 
 -   **Power=1.0**
 
-![](images/clipboard-3450830474.png)
+![](images/clipboard-2325178727.png)
 
 -   **Power=1.5**
 
-![](images/clipboard-286145253.png)
+    ![](images/clipboard-3587201890.png)
+
+<!-- -->
 
 -   **Power=2.0**
 
-![](images/clipboard-3620178840.png)
+![](images/clipboard-3711319634.png)
 
 -   **Power=2.5**
 
-![](images/clipboard-1828980380.png)
+![](images/clipboard-791078747.png)
 
 ### **Statistical graphic**
 
