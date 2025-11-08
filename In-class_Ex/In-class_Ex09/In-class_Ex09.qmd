@@ -1,5 +1,12 @@
 ---
 title: "Geography of Accessibility"
+author: "BingBing"
+date: "2025-11-8"
+format: html
+execute:
+  warning: false
+  message: false
+  freeze: true
 ---
 
 ## **Getting Started**
